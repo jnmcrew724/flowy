@@ -4,12 +4,33 @@
   'use strict';
 
   var KEY = 'flow-app-v2';
-  var ICONS = ['ads_click','calendar_month','gavel','domain','campaign','mail','call','payments','edit_note','schedule','inbox','receipt_long','work','psychology','local_cafe','directions_run'];
+  // Material Symbols Rounded ligature names, grouped by theme so the picker browses well.
+  var ICONS = [
+    // Work / office
+    'ads_click','calendar_month','gavel','domain','campaign','mail','call','phone_in_talk','phone_iphone','laptop_mac',
+    'inbox','payments','receipt_long','savings','account_balance','work','edit_note','checklist','task_alt','description',
+    'article','newspaper','contract_edit','note_alt','sticky_note_2','psychology','group','person','event','today',
+    'schedule','alarm','timer',
+    // Books / library / studying
+    'menu_book','auto_stories','import_contacts','chrome_reader_mode','local_library','library_books','collections_bookmark','book','book_2','bookmark',
+    'bookmarks','school','history_edu','subject','translate','science','biotech','calculate','functions','quiz',
+    'fact_check','lightbulb','edit','draw','stylus_note',
+    // Physical activity / sports
+    'directions_run','run_circle','sprint','exercise','cardio_load','fitness_center','weight','self_improvement','spa','directions_walk',
+    'nordic_walking','hiking','directions_bike','pedal_bike','pool','surfing','scuba_diving','kayaking','rowing','downhill_skiing',
+    'ice_skating','skateboarding','paragliding','sports','sports_score','emoji_events','sports_soccer','sports_basketball','sports_tennis','sports_golf',
+    'sports_baseball','sports_football','sports_volleyball','sports_handball','sports_hockey','sports_cricket','sports_rugby','sports_mma','sports_martial_arts','sports_gymnastics',
+    'sports_kabaddi','sports_esports',
+    // Daily life
+    'home','restaurant','local_dining','lunch_dining','coffee','local_cafe','shopping_cart','bed','bedtime','nightlight',
+    'wb_sunny','pets','music_note','movie','flight','directions_car','water_drop','medication','favorite','star',
+    'grade','check_circle','park','forest','cleaning_services','local_laundry_service','flag'
+  ];
   var EMOJI_MAP = {'🎯':'ads_click','📅':'calendar_month','⚖️':'gavel','🏢':'domain','📣':'campaign','✉️':'mail','📞':'call','💰':'payments','📝':'edit_note','⏱️':'schedule','📬':'inbox','🧾':'receipt_long','💼':'work','🧠':'psychology','☕':'local_cafe','🏃':'directions_run'};
 
   // Settings (persisted). Defaults match the prototype's defaults.
   var SKEY = 'flow-settings-v1';
-  var DEFAULT_SETTINGS = { tapMode: 'red-yellow-green', autoReset: true, celebration: true, palette: ['#a8503f','#a3781f','#3f7d5a'] };
+  var DEFAULT_SETTINGS = { tapMode: 'red-green', autoReset: true, celebration: true, palette: ['#a8503f','#a3781f','#3f7d5a'] };
   function loadSettings() {
     try {
       var raw = localStorage.getItem(SKEY);
