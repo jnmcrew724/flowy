@@ -16,11 +16,10 @@
     'bookmarks','school','history_edu','subject','translate','science','biotech','calculate','functions','quiz',
     'fact_check','lightbulb','edit','draw','stylus_note',
     // Physical activity / sports
-    'directions_run','run_circle','sprint','exercise','cardio_load','fitness_center','weight','self_improvement','spa','directions_walk',
-    'nordic_walking','hiking','directions_bike','pedal_bike','pool','surfing','scuba_diving','kayaking','rowing','downhill_skiing',
-    'ice_skating','skateboarding','paragliding','sports','sports_score','emoji_events','sports_soccer','sports_basketball','sports_tennis','sports_golf',
-    'sports_baseball','sports_football','sports_volleyball','sports_handball','sports_hockey','sports_cricket','sports_rugby','sports_mma','sports_martial_arts','sports_gymnastics',
-    'sports_kabaddi','sports_esports',
+    'directions_run','directions_walk','hiking','fitness_center','exercise','self_improvement','spa','directions_bike','pool','surfing',
+    'sports_soccer','sports_basketball','sports_tennis','sports_golf','sports_baseball','sports_football','sports_martial_arts','emoji_events',
+    // Family / kids
+    'family_restroom','escalator_warning','child_care','toys',
     // Daily life
     'home','restaurant','local_dining','lunch_dining','coffee','local_cafe','shopping_cart','bed','bedtime','nightlight',
     'wb_sunny','pets','music_note','movie','flight','directions_car','water_drop','medication','favorite','star',
