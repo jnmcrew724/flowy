@@ -20,6 +20,8 @@
     'sports_soccer','sports_basketball','sports_tennis','sports_golf','sports_baseball','sports_football','sports_martial_arts','emoji_events',
     // Family / kids
     'family_restroom','escalator_warning','child_care','toys',
+    // Home repair / yard / garden
+    'handyman','home_repair_service','construction','format_paint','grass','yard','potted_plant','local_florist','agriculture',
     // Daily life
     'home','restaurant','local_dining','lunch_dining','coffee','local_cafe','shopping_cart','bed','bedtime','nightlight',
     'wb_sunny','pets','music_note','movie','flight','directions_car','water_drop','medication','favorite','star',
@@ -243,7 +245,7 @@
           el('span', { 'class': 'drag', text: '⠿', 'aria-label': 'Drag to reorder',
             onPointerdown: (function (idx) { return function (ev) { beginDrag(ev, idx); }; })(i) }),
           el('button', { 'class': 'icbtn', 'aria-label': 'Change icon',
-            onClick: (function (id) { return function () { setState({ pickerFor: s.pickerFor === id ? null : id }); }; })(p.id) }, [ icon(p.icon, null, 'font-size:21px;color:#6b6355') ]),
+            onClick: (function (id) { return function () { setState({ pickerFor: s.pickerFor === id ? null : id }); }; })(p.id) }, [ icon(p.icon, null, 'font-size:25px;color:#6b6355') ]),
           el('input', { 'class': 'nameinput', value: p.name, placeholder: 'Step name', 'aria-label': 'Step name',
             onInput: (function (idx) { return function (ev) { var v = ev.target.value; mutWfNoRender(function (x) { return Object.assign({}, x, { steps: x.steps.map(function (q, j) { return j === idx ? Object.assign({}, q, { name: v }) : q; }) }); }); }; })(i) }),
           el('button', { 'class': 'rm', text: '✕', 'aria-label': 'Remove step',
@@ -260,7 +262,7 @@
                 mutWfNoRender(function (x) { return Object.assign({}, x, { steps: x.steps.map(function (q, j) { return j === idx ? Object.assign({}, q, { icon: c }) : q; }) }); });
                 setState({ pickerFor: null });
               }; })(i, ch)
-            }, [ icon(ch, null, 'font-size:19px;color:#6b6355') ]));
+            }, [ icon(ch, null, 'font-size:24px;color:#6b6355') ]));
           });
           rowChildren.push(grid);
         }
