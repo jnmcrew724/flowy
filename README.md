@@ -7,7 +7,7 @@ It's a single-screen installable PWA: no backend, no accounts. State lives in yo
 ## Features
 
 - **Tap a step** to cycle its status: `TO DO → IN PROGRESS → DONE` (or a 2-state `TO DO → DONE` mode).
-- **Multiple workflows** — switch between them with the chips at the top (seeded with *Daily Flow* and *Wind-down*).
+- **Multiple workflows** — keep as many as you like, but **pin up to 4** to show as chips at the top; the rest live in the `⋯` manage sheet where you pin/unpin them (seeded with *Daily Flow* and *Wind-down*).
 - **Fully editable** — add / remove / rename steps, swap icons, drag to reorder, rename and add / delete workflows. All in edit mode, all saved instantly.
 - **Auto-reset** — every step resets to *TO DO* on the first open of a new day.
 - **Celebration** — a confetti burst when every step is done.

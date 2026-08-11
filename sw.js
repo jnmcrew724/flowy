@@ -1,6 +1,6 @@
 /* Flowy service worker — offline-first cache for the app shell.
    Bump CACHE when shipping changes so clients pick them up. */
-var CACHE = 'flowy-v4';
+var CACHE = 'flowy-v5';
 var ASSETS = [
   './',
   './index.html',

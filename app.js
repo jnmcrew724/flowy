@@ -4,6 +4,8 @@
   'use strict';
 
   var KEY = 'flow-app-v2';
+  // How many workflows can be "pinned" (shown as chips up top) at once.
+  var MAX_ACTIVE = 4;
   // Material Symbols Rounded ligature names, grouped by theme so the picker browses well.
   var ICONS = [
     // Work / office
@@ -48,7 +50,7 @@
   function seed() {
     return {
       workflows: [
-        { id: 'w1', name: 'Daily Flow', steps: [
+        { id: 'w1', name: 'Daily Flow', active: true, steps: [
           { id: 's1', name: 'Leads', icon: 'ads_click', st: 0 },
           { id: 's2', name: 'Events', icon: 'calendar_month', st: 0 },
           { id: 's3', name: 'Cases', icon: 'gavel', st: 0 },
@@ -56,13 +58,13 @@
           { id: 's5', name: 'Marketing', icon: 'campaign', st: 0 },
           { id: 's6', name: 'Email', icon: 'mail', st: 0 }
         ]},
-        { id: 'w2', name: 'Wind-down', steps: [
+        { id: 'w2', name: 'Wind-down', active: true, steps: [
           { id: 's7', name: 'Log time', icon: 'schedule', st: 0 },
           { id: 's8', name: 'Tomorrow’s list', icon: 'edit_note', st: 0 }
         ]}
       ],
       activeId: 'w1', editing: false, pickerFor: null, dragId: null,
-      confetti: null, lastReset: today()
+      managing: false, capNote: false, confetti: null, lastReset: today()
     };
   }
 
@@ -75,7 +77,19 @@
           var wfs = d.workflows.map(function (w) {
             return Object.assign({}, w, { steps: w.steps.map(function (p) { return Object.assign({}, p, { icon: fixIcon(p.icon) }); }) });
           });
-          return { workflows: wfs, activeId: d.activeId, editing: false, pickerFor: null, dragId: null, confetti: null, lastReset: d.lastReset || today() };
+          // Backfill the "active" (pinned) flag for data saved before this feature:
+          // if none of the workflows carry the flag, pin the first MAX_ACTIVE.
+          var hasFlag = wfs.some(function (w) { return typeof w.active === 'boolean'; });
+          wfs = wfs.map(function (w, i) {
+            return Object.assign({}, w, { active: hasFlag ? !!w.active : i < MAX_ACTIVE });
+          });
+          if (!wfs.some(function (w) { return w.active; })) wfs[0].active = true;
+          // The viewed workflow must be one that's pinned.
+          var aid = d.activeId;
+          if (!wfs.some(function (w) { return w.id === aid && w.active; })) {
+            aid = wfs.filter(function (w) { return w.active; })[0].id;
+          }
+          return { workflows: wfs, activeId: aid, editing: false, pickerFor: null, dragId: null, managing: false, capNote: false, confetti: null, lastReset: d.lastReset || today() };
         }
       }
     } catch (e) {}
@@ -91,6 +105,24 @@
   function setState(patch) { Object.assign(state, patch); persist(); render(); }
 
   function wf() { return state.workflows.filter(function (w) { return w.id === state.activeId; })[0] || state.workflows[0]; }
+  function activeCount() { return state.workflows.filter(function (w) { return w.active; }).length; }
+  // Pin / unpin a workflow. Enforces the MAX_ACTIVE cap and keeps at least one
+  // pinned; if the currently-viewed workflow gets unpinned, switch to another.
+  function toggleActive(id) {
+    var target = state.workflows.filter(function (w) { return w.id === id; })[0];
+    if (!target) return;
+    if (target.active) {
+      if (activeCount() <= 1) return; // never leave zero pinned
+      state.workflows = state.workflows.map(function (w) { return w.id === id ? Object.assign({}, w, { active: false }) : w; });
+      var patch = { capNote: false };
+      if (state.activeId === id) patch.activeId = state.workflows.filter(function (w) { return w.active; })[0].id;
+      setState(patch);
+    } else {
+      if (activeCount() >= MAX_ACTIVE) { setState({ capNote: true }); return; }
+      state.workflows = state.workflows.map(function (w) { return w.id === id ? Object.assign({}, w, { active: true }) : w; });
+      setState({ capNote: false });
+    }
+  }
   function mutWf(fn) {
     var id = wf().id;
     state.workflows = state.workflows.map(function (w) { return w.id === id ? fn(w) : w; });
@@ -189,9 +221,9 @@
       el('span', { text: 'Flowy' })
     ]));
 
-    // Chips
+    // Chips — only pinned (active) workflows show up top.
     var chips = el('div', { 'class': 'chips' });
-    s.workflows.forEach(function (x) {
+    s.workflows.filter(function (x) { return x.active; }).forEach(function (x) {
       chips.appendChild(el('button', {
         'class': 'chip ' + (x.id === w.id ? 'active' : 'inactive'),
         text: x.name,
@@ -202,9 +234,16 @@
       'class': 'chip add', text: '＋', 'aria-label': 'Add workflow',
       onClick: function () {
         var id = uid();
-        state.workflows = state.workflows.concat([{ id: id, name: 'New flow', steps: [{ id: uid(), name: 'First step', icon: 'flag', st: 0 }] }]);
-        setState({ activeId: id, editing: true, pickerFor: null });
+        var full = activeCount() >= MAX_ACTIVE;
+        state.workflows = state.workflows.concat([{ id: id, name: 'New flow', active: !full, steps: [{ id: uid(), name: 'First step', icon: 'flag', st: 0 }] }]);
+        // No room to pin it? Drop into the manage sheet so it can be seen/pinned.
+        if (full) setState({ managing: true, capNote: true });
+        else setState({ activeId: id, editing: true, pickerFor: null });
       }
+    }));
+    chips.appendChild(el('button', {
+      'class': 'chip manage', text: '⋯', 'aria-label': 'Manage workflows',
+      onClick: function () { setState({ managing: true, capNote: false, pickerFor: null }); }
     }));
     frag.appendChild(chips);
 
@@ -272,7 +311,9 @@
         list.appendChild(el('button', { 'class': 'delwf', text: '✕ DELETE THIS WORKFLOW',
           onClick: function () {
             var rest = state.workflows.filter(function (x) { return x.id !== w.id; });
-            setState({ workflows: rest, activeId: rest[0].id, editing: false, pickerFor: null });
+            var next = rest.filter(function (x) { return x.active; })[0] || rest[0];
+            if (!next.active) rest = rest.map(function (x) { return x.id === next.id ? Object.assign({}, x, { active: true }) : x; });
+            setState({ workflows: rest, activeId: next.id, editing: false, pickerFor: null, managing: false });
           } }));
       }
     }
@@ -292,6 +333,47 @@
         onClick: function () { setState({ editing: false, pickerFor: null }); } }));
     }
     frag.appendChild(footer);
+
+    // Manage sheet — pin/unpin any workflow. Only pinned ones become top chips.
+    if (s.managing) {
+      var actN = activeCount();
+      var backdrop = el('div', { 'class': 'sheet-backdrop',
+        onClick: function () { setState({ managing: false, capNote: false }); } });
+      var panel = el('div', { 'class': 'sheet', onClick: function (ev) { ev.stopPropagation(); } });
+      panel.appendChild(el('div', { 'class': 'sheet-title', text: 'Workflows' }));
+      panel.appendChild(el('div', { 'class': 'sheet-sub',
+        text: 'Pin up to ' + MAX_ACTIVE + ' to show up top · ' + actN + '/' + MAX_ACTIVE + ' pinned' }));
+      if (s.capNote) panel.appendChild(el('div', { 'class': 'sheet-note',
+        text: 'That’s ' + MAX_ACTIVE + ' pinned — unpin one to make room.' }));
+      var wlist = el('div', { 'class': 'sheet-list' });
+      s.workflows.forEach(function (x) {
+        var pinned = !!x.active;
+        var row = el('div', { 'class': 'wfrow' + (x.id === w.id ? ' current' : '') }, [
+          el('button', {
+            'class': 'pin' + (pinned ? ' on' : ''),
+            'aria-label': pinned ? 'Unpin workflow' : 'Pin workflow',
+            onClick: (function (id) { return function () { toggleActive(id); }; })(x.id)
+          }, [ icon('push_pin') ]),
+          el('button', {
+            'class': 'wfrow-name',
+            onClick: (function (xx) { return function () {
+              // Tapping a pinned workflow opens it; an unpinned one pins it.
+              if (xx.active) setState({ activeId: xx.id, managing: false, capNote: false });
+              else toggleActive(xx.id);
+            }; })(x)
+          }, [
+            el('span', { 'class': 'wfrow-title', text: x.name || 'Untitled flow' }),
+            el('span', { 'class': 'wfrow-meta', text: x.steps.length + (x.steps.length === 1 ? ' step' : ' steps') + (pinned ? '' : ' · not pinned') })
+          ])
+        ]);
+        wlist.appendChild(row);
+      });
+      panel.appendChild(wlist);
+      panel.appendChild(el('button', { 'class': 'btn solid sheet-done', text: 'Done',
+        onClick: function () { setState({ managing: false, capNote: false }); } }));
+      backdrop.appendChild(panel);
+      frag.appendChild(backdrop);
+    }
 
     // Confetti
     if (s.confetti) {
