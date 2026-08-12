@@ -44,6 +44,20 @@ Served as-is on **GitHub Pages** (Settings → Pages → deploy from `main` / ro
 
 Defaults live in `app.js` (`DEFAULT_SETTINGS`): `tapMode` (`red-yellow-green` | `red-green`), `autoReset`, `celebration`, and the status color `palette`. The `tapMode` and `palette` are also editable at runtime from the in-app **Settings** sheet (persisted to `localStorage`).
 
+## Versioning
+
+The app version is a single constant, `VERSION`, near the top of `app.js`. It's shown as a `v1.0` pill next to the wordmark and at the bottom of the Settings sheet. **On each release, bump `VERSION`, add a CHANGELOG entry below, bump the `CACHE` name in `sw.js` (so installed copies update), and tag the merge commit** (`git tag vX.Y && git push origin vX.Y`).
+
+Numbering is loose semver: **minor** bump (1.0 → 1.1) for a new feature, **patch** (1.0 → 1.0.1) for a small fix or tweak.
+
+## Changelog
+
+### v1.0
+- Baseline release. Single-screen PWA workflow tracker: tap steps to cycle status, multiple workflows with up-to-4 pinned chips (chips wrap so all stay visible), full edit mode (add/remove/rename/reorder steps, swap icons), auto-reset each day, confetti on completion, offline service worker.
+- Delete a workflow from the `⋯` Manage sheet.
+- **Settings** sheet (`tune` icon): press-and-drag color picker for what *To do* / *In progress* / *Done* mean, a 2-state/3-state toggle, and **per-flow color overrides** via a *This flow / All flows* scope switch.
+- In-app version badge.
+
 ---
 
 Personal-use project. Design and behavior recreated from a high-fidelity handoff prototype.
