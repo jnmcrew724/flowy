@@ -7,7 +7,8 @@ It's a single-screen installable PWA: no backend, no accounts. State lives in yo
 ## Features
 
 - **Tap a step** to cycle its status: `TO DO → IN PROGRESS → DONE` (or a 2-state `TO DO → DONE` mode).
-- **Multiple workflows** — keep as many as you like, but **pin up to 4** to show as chips at the top; the rest live in the `⋯` manage sheet where you pin/unpin them (seeded with *Daily Flow* and *Wind-down*).
+- **Multiple workflows** — keep as many as you like, but **pin up to 4** to show as chips at the top (chips wrap so all pinned flows stay visible); the rest live in the `⋯` manage sheet where you pin/unpin, switch between them, or **delete** any flow (seeded with *Daily Flow* and *Wind-down*).
+- **Custom status colors** — a settings sheet (the `tune` icon, top-right) lets you pick exactly what color means *To do* and *Done* (and *In progress* in 3-state mode), plus toggle the middle step on/off. Reset to defaults anytime.
 - **Fully editable** — add / remove / rename steps, swap icons, drag to reorder, rename and add / delete workflows. All in edit mode, all saved instantly.
 - **Auto-reset** — every step resets to *TO DO* on the first open of a new day.
 - **Celebration** — a confetti burst when every step is done.
@@ -41,7 +42,7 @@ Served as-is on **GitHub Pages** (Settings → Pages → deploy from `main` / ro
 
 ## Settings
 
-Behavior toggles live in `app.js` (`DEFAULT_SETTINGS`): `tapMode` (`red-yellow-green` | `red-green`), `autoReset`, `celebration`, and the status color `palette`.
+Defaults live in `app.js` (`DEFAULT_SETTINGS`): `tapMode` (`red-yellow-green` | `red-green`), `autoReset`, `celebration`, and the status color `palette`. The `tapMode` and `palette` are also editable at runtime from the in-app **Settings** sheet (persisted to `localStorage`).
 
 ---
 

@@ -64,7 +64,7 @@
         ]}
       ],
       activeId: 'w1', editing: false, pickerFor: null, dragId: null,
-      managing: false, capNote: false, confetti: null, lastReset: today()
+      managing: false, capNote: false, settingsOpen: false, confetti: null, lastReset: today()
     };
   }
 
@@ -89,7 +89,7 @@
           if (!wfs.some(function (w) { return w.id === aid && w.active; })) {
             aid = wfs.filter(function (w) { return w.active; })[0].id;
           }
-          return { workflows: wfs, activeId: aid, editing: false, pickerFor: null, dragId: null, managing: false, capNote: false, confetti: null, lastReset: d.lastReset || today() };
+          return { workflows: wfs, activeId: aid, editing: false, pickerFor: null, dragId: null, managing: false, capNote: false, settingsOpen: false, confetti: null, lastReset: d.lastReset || today() };
         }
       }
     } catch (e) {}
@@ -123,6 +123,25 @@
       setState({ capNote: false });
     }
   }
+  // Permanently delete a workflow. Keeps at least one workflow and at least
+  // one pinned; if the deleted one was being viewed, switch to another.
+  function deleteWorkflow(id) {
+    if (state.workflows.length <= 1) return;
+    var rest = state.workflows.filter(function (w) { return w.id !== id; });
+    if (!rest.some(function (w) { return w.active; })) rest[0] = Object.assign({}, rest[0], { active: true });
+    var patch = { workflows: rest, editing: false, pickerFor: null, capNote: false };
+    if (state.activeId === id) {
+      var next = rest.filter(function (w) { return w.active; })[0] || rest[0];
+      patch.activeId = next.id;
+    }
+    setState(patch);
+  }
+  // ---- settings persistence ----
+  function persistSettings() { try { localStorage.setItem(SKEY, JSON.stringify(settings)); } catch (e) {} }
+  function saveSettings(patch) { Object.assign(settings, patch); persistSettings(); render(); }
+  // Update one status color without re-rendering (keeps the native color
+  // picker open while dragging); the sheet re-renders when it's closed.
+  function setPaletteColor(idx, v) { var np = palette().slice(); np[idx] = v; settings.palette = np; persistSettings(); }
   function mutWf(fn) {
     var id = wf().id;
     state.workflows = state.workflows.map(function (w) { return w.id === id ? fn(w) : w; });
@@ -218,7 +237,9 @@
     // Brand
     frag.appendChild(el('div', { 'class': 'brand' }, [
       el('img', { src: 'assets/badge-green.png', alt: '' }),
-      el('span', { text: 'Flowy' })
+      el('span', { text: 'Flowy' }),
+      el('button', { 'class': 'gearbtn', 'aria-label': 'Settings',
+        onClick: function () { setState({ settingsOpen: true, pickerFor: null, managing: false }); } }, [ icon('tune') ])
     ]));
 
     // Chips — only pinned (active) workflows show up top.
@@ -310,10 +331,7 @@
       if (s.workflows.length > 1) {
         list.appendChild(el('button', { 'class': 'delwf', text: '✕ DELETE THIS WORKFLOW',
           onClick: function () {
-            var rest = state.workflows.filter(function (x) { return x.id !== w.id; });
-            var next = rest.filter(function (x) { return x.active; })[0] || rest[0];
-            if (!next.active) rest = rest.map(function (x) { return x.id === next.id ? Object.assign({}, x, { active: true }) : x; });
-            setState({ workflows: rest, activeId: next.id, editing: false, pickerFor: null, managing: false });
+            if (window.confirm('Delete “' + (w.name || 'Untitled flow') + '”? This can’t be undone.')) deleteWorkflow(w.id);
           } }));
       }
     }
@@ -364,7 +382,14 @@
           }, [
             el('span', { 'class': 'wfrow-title', text: x.name || 'Untitled flow' }),
             el('span', { 'class': 'wfrow-meta', text: x.steps.length + (x.steps.length === 1 ? ' step' : ' steps') + (pinned ? '' : ' · not pinned') })
-          ])
+          ]),
+          (s.workflows.length > 1 ? el('button', {
+            'class': 'wfrow-del', 'aria-label': 'Delete workflow',
+            onClick: (function (xx) { return function (ev) {
+              ev.stopPropagation();
+              if (window.confirm('Delete “' + (xx.name || 'Untitled flow') + '”? This can’t be undone.')) deleteWorkflow(xx.id);
+            }; })(x)
+          }, [ icon('delete') ]) : null)
         ]);
         wlist.appendChild(row);
       });
@@ -373,6 +398,49 @@
         onClick: function () { setState({ managing: false, capNote: false }); } }));
       backdrop.appendChild(panel);
       frag.appendChild(backdrop);
+    }
+
+    // Settings sheet — app-wide status colors + tap behavior.
+    if (s.settingsOpen) {
+      var three = settings.tapMode === 'red-yellow-green';
+      var sBackdrop = el('div', { 'class': 'sheet-backdrop',
+        onClick: function () { setState({ settingsOpen: false }); } });
+      var sPanel = el('div', { 'class': 'sheet', onClick: function (ev) { ev.stopPropagation(); } });
+      sPanel.appendChild(el('div', { 'class': 'sheet-title', text: 'Settings' }));
+      sPanel.appendChild(el('div', { 'class': 'sheet-sub', text: 'What the colors mean' }));
+
+      var colorRow = function (label, idx) {
+        var inp = el('input', { type: 'color', 'class': 'colorinput', value: pal[idx], 'aria-label': label,
+          onInput: (function (i) { return function (ev) { setPaletteColor(i, ev.target.value); }; })(idx),
+          onChange: function () { render(); } });
+        return el('label', { 'class': 'setrow' }, [
+          el('span', { 'class': 'swatch', style: 'background:' + pal[idx] }),
+          el('span', { 'class': 'setlabel', text: label }),
+          inp
+        ]);
+      };
+
+      var setBody = el('div', { 'class': 'set-list' });
+      setBody.appendChild(colorRow('“To do”', 0));
+      if (three) setBody.appendChild(colorRow('“In progress”', 1));
+      setBody.appendChild(colorRow('“Done”', 2));
+      setBody.appendChild(el('button', { 'class': 'set-reset', text: 'Reset to default colors',
+        onClick: function () { saveSettings({ palette: DEFAULT_SETTINGS.palette.slice() }); } }));
+      sPanel.appendChild(setBody);
+
+      sPanel.appendChild(el('div', { 'class': 'sheet-sub', style: 'margin-top:18px', text: 'Behavior' }));
+      var behBody = el('div', { 'class': 'set-list' });
+      behBody.appendChild(el('button', { 'class': 'setrow setrow-btn', 'aria-label': 'Toggle in-progress step',
+        onClick: function () { saveSettings({ tapMode: three ? 'red-green' : 'red-yellow-green' }); } }, [
+        el('span', { 'class': 'setlabel', text: 'Include an “In progress” step' }),
+        el('span', { 'class': 'toggle' + (three ? ' on' : '') }, [ el('span', { 'class': 'knob' }) ])
+      ]));
+      sPanel.appendChild(behBody);
+
+      sPanel.appendChild(el('button', { 'class': 'btn solid sheet-done', text: 'Done',
+        onClick: function () { setState({ settingsOpen: false }); } }));
+      sBackdrop.appendChild(sPanel);
+      frag.appendChild(sBackdrop);
     }
 
     // Confetti
