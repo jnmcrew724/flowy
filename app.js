@@ -64,7 +64,7 @@
         ]}
       ],
       activeId: 'w1', editing: false, pickerFor: null, dragId: null,
-      managing: false, capNote: false, settingsOpen: false, confetti: null, lastReset: today()
+      managing: false, capNote: false, settingsOpen: false, colorPickerFor: null, confetti: null, lastReset: today()
     };
   }
 
@@ -89,7 +89,7 @@
           if (!wfs.some(function (w) { return w.id === aid && w.active; })) {
             aid = wfs.filter(function (w) { return w.active; })[0].id;
           }
-          return { workflows: wfs, activeId: aid, editing: false, pickerFor: null, dragId: null, managing: false, capNote: false, settingsOpen: false, confetti: null, lastReset: d.lastReset || today() };
+          return { workflows: wfs, activeId: aid, editing: false, pickerFor: null, dragId: null, managing: false, capNote: false, settingsOpen: false, colorPickerFor: null, confetti: null, lastReset: d.lastReset || today() };
         }
       }
     } catch (e) {}
@@ -152,6 +152,37 @@
     return (Array.isArray(p) && p.length >= 3) ? p : ['#a8503f','#a3781f','#3f7d5a'];
   }
   function mix(hex, pct) { return 'color-mix(in oklab, ' + hex + ' ' + pct + '%, #fdfbf7)'; }
+
+  // ---- color math for the drag-to-pick picker (hex <-> HSV) ----
+  function hexToRgb(hex) {
+    hex = (hex || '').replace('#', '');
+    if (hex.length === 3) hex = hex.split('').map(function (c) { return c + c; }).join('');
+    var n = parseInt(hex || '000000', 16);
+    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+  }
+  function rgbToHex(r, g, b) {
+    function h(x) { x = Math.round(Math.min(255, Math.max(0, x))); return (x < 16 ? '0' : '') + x.toString(16); }
+    return '#' + h(r) + h(g) + h(b);
+  }
+  function rgbToHsv(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    var max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min, hh = 0;
+    if (d) {
+      if (max === r) hh = ((g - b) / d) % 6;
+      else if (max === g) hh = (b - r) / d + 2;
+      else hh = (r - g) / d + 4;
+      hh *= 60; if (hh < 0) hh += 360;
+    }
+    return { h: hh, s: max ? d / max : 0, v: max };
+  }
+  function hsvToHex(h, s, v) {
+    var c = v * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = v - c, r, g, b;
+    if (h < 60) { r = c; g = x; b = 0; } else if (h < 120) { r = x; g = c; b = 0; }
+    else if (h < 180) { r = 0; g = c; b = x; } else if (h < 240) { r = 0; g = x; b = c; }
+    else if (h < 300) { r = x; g = 0; b = c; } else { r = c; g = 0; b = x; }
+    return rgbToHex((r + m) * 255, (g + m) * 255, (b + m) * 255);
+  }
+  function hexToHsv(hex) { var c = hexToRgb(hex); return rgbToHsv(c.r, c.g, c.b); }
 
   function tap(idx) {
     var three = settings.tapMode === 'red-yellow-green';
@@ -239,7 +270,7 @@
       el('img', { src: 'assets/badge-green.png', alt: '' }),
       el('span', { text: 'Flowy' }),
       el('button', { 'class': 'gearbtn', 'aria-label': 'Settings',
-        onClick: function () { setState({ settingsOpen: true, pickerFor: null, managing: false }); } }, [ icon('tune') ])
+        onClick: function () { setState({ settingsOpen: true, pickerFor: null, managing: false, colorPickerFor: null }); } }, [ icon('tune') ])
     ]));
 
     // Chips — only pinned (active) workflows show up top.
@@ -404,20 +435,82 @@
     if (s.settingsOpen) {
       var three = settings.tapMode === 'red-yellow-green';
       var sBackdrop = el('div', { 'class': 'sheet-backdrop',
-        onClick: function () { setState({ settingsOpen: false }); } });
+        onClick: function () { setState({ settingsOpen: false, colorPickerFor: null }); } });
       var sPanel = el('div', { 'class': 'sheet', onClick: function (ev) { ev.stopPropagation(); } });
       sPanel.appendChild(el('div', { 'class': 'sheet-title', text: 'Settings' }));
       sPanel.appendChild(el('div', { 'class': 'sheet-sub', text: 'What the colors mean' }));
 
+      // A press-and-drag color picker: a saturation/brightness square + a hue
+      // strip. Dragging updates the color live (persist only, no re-render, so
+      // the gesture isn't interrupted); the swatch/value update in place.
+      var buildPicker = function (idx, swatchEl, valEl) {
+        var hsv = hexToHsv(pal[idx]);
+        var hue = hsv.h, sat = hsv.s, val = hsv.v;
+        var svThumb = el('span', { 'class': 'sv-thumb' });
+        var sv = el('div', { 'class': 'sv-square' }, [ svThumb ]);
+        var hueThumb = el('span', { 'class': 'hue-thumb' });
+        var hueBar = el('div', { 'class': 'hue-bar' }, [ hueThumb ]);
+        function paintSV() {
+          sv.style.background = 'linear-gradient(to top, #000, rgba(0,0,0,0)),' +
+            'linear-gradient(to right, #fff, rgba(255,255,255,0)), hsl(' + hue + ',100%,50%)';
+        }
+        function placeThumbs() {
+          svThumb.style.left = (sat * 100) + '%';
+          svThumb.style.top = ((1 - val) * 100) + '%';
+          hueThumb.style.left = (hue / 360 * 100) + '%';
+        }
+        function commit() {
+          var hex = hsvToHex(hue, sat, val);
+          setPaletteColor(idx, hex);
+          svThumb.style.background = hex;
+          hueThumb.style.background = 'hsl(' + hue + ',100%,50%)';
+          if (swatchEl) swatchEl.style.background = hex;
+          if (valEl) valEl.textContent = hex.toUpperCase();
+        }
+        function dragOn(surface, onMove) {
+          surface.addEventListener('pointerdown', function (e) {
+            e.preventDefault();
+            var r = surface.getBoundingClientRect();
+            function upd(ev) { onMove(ev, r); placeThumbs(); commit(); }
+            upd(e);
+            function mv(ev) { ev.preventDefault(); upd(ev); }
+            function up() { window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); }
+            window.addEventListener('pointermove', mv);
+            window.addEventListener('pointerup', up);
+          });
+        }
+        dragOn(sv, function (ev, r) {
+          var x = Math.min(Math.max(ev.clientX - r.left, 0), r.width);
+          var y = Math.min(Math.max(ev.clientY - r.top, 0), r.height);
+          sat = r.width ? x / r.width : 0;
+          val = r.height ? 1 - y / r.height : 0;
+        });
+        dragOn(hueBar, function (ev, r) {
+          var x = Math.min(Math.max(ev.clientX - r.left, 0), r.width);
+          hue = r.width ? x / r.width * 360 : 0;
+          paintSV();
+        });
+        paintSV(); placeThumbs();
+        svThumb.style.background = pal[idx];
+        hueThumb.style.background = 'hsl(' + hue + ',100%,50%)';
+        return el('div', { 'class': 'picker' }, [ sv, hueBar ]);
+      };
+
       var colorRow = function (label, idx) {
-        var inp = el('input', { type: 'color', 'class': 'colorinput', value: pal[idx], 'aria-label': label,
-          onInput: (function (i) { return function (ev) { setPaletteColor(i, ev.target.value); }; })(idx),
-          onChange: function () { render(); } });
-        return el('label', { 'class': 'setrow' }, [
-          el('span', { 'class': 'swatch', style: 'background:' + pal[idx] }),
+        var open = s.colorPickerFor === idx;
+        var cur = pal[idx];
+        var swatchEl = el('span', { 'class': 'swatch', style: 'background:' + cur });
+        var valEl = el('span', { 'class': 'setval', text: cur.toUpperCase() });
+        var header = el('button', { 'class': 'setrow setrow-btn' + (open ? ' open' : ''), 'aria-label': label + ' color',
+          onClick: (function (i) { return function () { setState({ colorPickerFor: s.colorPickerFor === i ? null : i }); }; })(idx) }, [
+          swatchEl,
           el('span', { 'class': 'setlabel', text: label }),
-          inp
+          valEl,
+          el('span', { 'class': 'setcaret msr', text: open ? 'expand_less' : 'expand_more' })
         ]);
+        var wrap = el('div', { 'class': 'setcolor' + (open ? ' open' : '') }, [ header ]);
+        if (open) wrap.appendChild(buildPicker(idx, swatchEl, valEl));
+        return wrap;
       };
 
       var setBody = el('div', { 'class': 'set-list' });
@@ -438,7 +531,7 @@
       sPanel.appendChild(behBody);
 
       sPanel.appendChild(el('button', { 'class': 'btn solid sheet-done', text: 'Done',
-        onClick: function () { setState({ settingsOpen: false }); } }));
+        onClick: function () { setState({ settingsOpen: false, colorPickerFor: null }); } }));
       sBackdrop.appendChild(sPanel);
       frag.appendChild(sBackdrop);
     }
