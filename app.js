@@ -142,6 +142,23 @@
   // Update one status color without re-rendering (keeps the native color
   // picker open while dragging); the sheet re-renders when it's closed.
   function setPaletteColor(idx, v) { var np = palette().slice(); np[idx] = v; settings.palette = np; persistSettings(); }
+  // Same, but writes to the active workflow's own color override (seeded from
+  // the global palette the first time). No re-render, so a drag isn't broken.
+  function setFlowPaletteColor(idx, v) {
+    var w = wf();
+    var base = hasFlowPalette(w) ? w.palette.slice() : palette().slice();
+    base[idx] = v;
+    mutWfNoRender(function (x) { return Object.assign({}, x, { palette: base }); });
+  }
+  // Drop the active workflow's color override so it falls back to the default.
+  function clearFlowPalette() {
+    var id = wf().id;
+    var rest = state.workflows.map(function (x) {
+      if (x.id !== id) return x;
+      var y = Object.assign({}, x); delete y.palette; return y;
+    });
+    setState({ workflows: rest, colorPickerFor: null });
+  }
   function mutWf(fn) {
     var id = wf().id;
     state.workflows = state.workflows.map(function (w) { return w.id === id ? fn(w) : w; });
@@ -151,6 +168,13 @@
     var p = settings.palette;
     return (Array.isArray(p) && p.length >= 3) ? p : ['#a8503f','#a3781f','#3f7d5a'];
   }
+  // A workflow's effective status colors: its own override if it has one,
+  // otherwise the global default from settings.
+  function paletteFor(w) {
+    var p = w && w.palette;
+    return (Array.isArray(p) && p.length >= 3) ? p : palette();
+  }
+  function hasFlowPalette(w) { return !!(w && Array.isArray(w.palette) && w.palette.length >= 3); }
   function mix(hex, pct) { return 'color-mix(in oklab, ' + hex + ' ' + pct + '%, #fdfbf7)'; }
 
   // ---- color math for the drag-to-pick picker (hex <-> HSV) ----
@@ -260,7 +284,7 @@
 
   function render() {
     var app = document.getElementById('app');
-    var s = state, w = wf(), pal = palette();
+    var s = state, w = wf(), pal = paletteFor(w);
     var allDone = w.steps.length > 0 && w.steps.every(function (p) { return p.st === 2; });
 
     var frag = document.createDocumentFragment();
@@ -270,7 +294,7 @@
       el('img', { src: 'assets/badge-green.png', alt: '' }),
       el('span', { text: 'Flowy' }),
       el('button', { 'class': 'gearbtn', 'aria-label': 'Settings',
-        onClick: function () { setState({ settingsOpen: true, pickerFor: null, managing: false, colorPickerFor: null }); } }, [ icon('tune') ])
+        onClick: function () { setState({ settingsOpen: true, pickerFor: null, managing: false, colorPickerFor: null, colorScope: 'flow' }); } }, [ icon('tune') ])
     ]));
 
     // Chips — only pinned (active) workflows show up top.
@@ -438,13 +462,27 @@
         onClick: function () { setState({ settingsOpen: false, colorPickerFor: null }); } });
       var sPanel = el('div', { 'class': 'sheet', onClick: function (ev) { ev.stopPropagation(); } });
       sPanel.appendChild(el('div', { 'class': 'sheet-title', text: 'Settings' }));
+      var scopeGlobal = s.colorScope === 'global';
+      var curPal = scopeGlobal ? palette() : paletteFor(w);
       sPanel.appendChild(el('div', { 'class': 'sheet-sub', text: 'What the colors mean' }));
+
+      // Scope switch — tune just this flow's colors, or the app-wide default.
+      sPanel.appendChild(el('div', { 'class': 'scope' }, [
+        el('button', { 'class': 'scope-opt' + (!scopeGlobal ? ' on' : ''), text: 'This flow',
+          onClick: function () { setState({ colorScope: 'flow', colorPickerFor: null }); } }),
+        el('button', { 'class': 'scope-opt' + (scopeGlobal ? ' on' : ''), text: 'All flows',
+          onClick: function () { setState({ colorScope: 'global', colorPickerFor: null }); } })
+      ]));
+      sPanel.appendChild(el('div', { 'class': 'set-cap',
+        text: scopeGlobal ? 'Default for flows without their own colors'
+          : (hasFlowPalette(w) ? 'Custom colors for “' + (w.name || 'this flow') + '”'
+                               : 'Set colors just for “' + (w.name || 'this flow') + '”') }));
 
       // A press-and-drag color picker: a saturation/brightness square + a hue
       // strip. Dragging updates the color live (persist only, no re-render, so
       // the gesture isn't interrupted); the swatch/value update in place.
-      var buildPicker = function (idx, swatchEl, valEl) {
-        var hsv = hexToHsv(pal[idx]);
+      var buildPicker = function (startHex, swatchEl, valEl, writeFn) {
+        var hsv = hexToHsv(startHex);
         var hue = hsv.h, sat = hsv.s, val = hsv.v;
         var svThumb = el('span', { 'class': 'sv-thumb' });
         var sv = el('div', { 'class': 'sv-square' }, [ svThumb ]);
@@ -461,7 +499,7 @@
         }
         function commit() {
           var hex = hsvToHex(hue, sat, val);
-          setPaletteColor(idx, hex);
+          writeFn(hex);
           svThumb.style.background = hex;
           hueThumb.style.background = 'hsl(' + hue + ',100%,50%)';
           if (swatchEl) swatchEl.style.background = hex;
@@ -491,14 +529,21 @@
           paintSV();
         });
         paintSV(); placeThumbs();
-        svThumb.style.background = pal[idx];
+        svThumb.style.background = startHex;
         hueThumb.style.background = 'hsl(' + hue + ',100%,50%)';
         return el('div', { 'class': 'picker' }, [ sv, hueBar ]);
       };
 
+      // Persist one color to the active scope (flow override vs global default).
+      var writeColor = function (idx) {
+        return scopeGlobal
+          ? function (hex) { setPaletteColor(idx, hex); }
+          : function (hex) { setFlowPaletteColor(idx, hex); };
+      };
+
       var colorRow = function (label, idx) {
         var open = s.colorPickerFor === idx;
-        var cur = pal[idx];
+        var cur = curPal[idx];
         var swatchEl = el('span', { 'class': 'swatch', style: 'background:' + cur });
         var valEl = el('span', { 'class': 'setval', text: cur.toUpperCase() });
         var header = el('button', { 'class': 'setrow setrow-btn' + (open ? ' open' : ''), 'aria-label': label + ' color',
@@ -509,7 +554,7 @@
           el('span', { 'class': 'setcaret msr', text: open ? 'expand_less' : 'expand_more' })
         ]);
         var wrap = el('div', { 'class': 'setcolor' + (open ? ' open' : '') }, [ header ]);
-        if (open) wrap.appendChild(buildPicker(idx, swatchEl, valEl));
+        if (open) wrap.appendChild(buildPicker(cur, swatchEl, valEl, writeColor(idx)));
         return wrap;
       };
 
@@ -517,8 +562,13 @@
       setBody.appendChild(colorRow('“To do”', 0));
       if (three) setBody.appendChild(colorRow('“In progress”', 1));
       setBody.appendChild(colorRow('“Done”', 2));
-      setBody.appendChild(el('button', { 'class': 'set-reset', text: 'Reset to default colors',
-        onClick: function () { saveSettings({ palette: DEFAULT_SETTINGS.palette.slice() }); } }));
+      if (scopeGlobal) {
+        setBody.appendChild(el('button', { 'class': 'set-reset', text: 'Reset to default colors',
+          onClick: function () { saveSettings({ palette: DEFAULT_SETTINGS.palette.slice() }); } }));
+      } else if (hasFlowPalette(w)) {
+        setBody.appendChild(el('button', { 'class': 'set-reset', text: 'Use default colors for this flow',
+          onClick: function () { clearFlowPalette(); } }));
+      }
       sPanel.appendChild(setBody);
 
       sPanel.appendChild(el('div', { 'class': 'sheet-sub', style: 'margin-top:18px', text: 'Behavior' }));
