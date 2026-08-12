@@ -4,6 +4,9 @@
   'use strict';
 
   var KEY = 'flow-app-v2';
+  // App version — bump this one line on each release (see CHANGELOG in README).
+  // Shown next to the wordmark and at the bottom of the Settings sheet.
+  var VERSION = '1.0';
   // How many workflows can be "pinned" (shown as chips up top) at once.
   var MAX_ACTIVE = 4;
   // Material Symbols Rounded ligature names, grouped by theme so the picker browses well.
@@ -293,6 +296,7 @@
     frag.appendChild(el('div', { 'class': 'brand' }, [
       el('img', { src: 'assets/badge-green.png', alt: '' }),
       el('span', { text: 'Flowy' }),
+      el('span', { 'class': 'ver', text: 'v' + VERSION }),
       el('button', { 'class': 'gearbtn', 'aria-label': 'Settings',
         onClick: function () { setState({ settingsOpen: true, pickerFor: null, managing: false, colorPickerFor: null, colorScope: 'flow' }); } }, [ icon('tune') ])
     ]));
@@ -580,6 +584,7 @@
       ]));
       sPanel.appendChild(behBody);
 
+      sPanel.appendChild(el('div', { 'class': 'set-ver', text: 'Flowy · v' + VERSION }));
       sPanel.appendChild(el('button', { 'class': 'btn solid sheet-done', text: 'Done',
         onClick: function () { setState({ settingsOpen: false, colorPickerFor: null }); } }));
       sBackdrop.appendChild(sPanel);
