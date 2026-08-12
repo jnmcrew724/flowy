@@ -52,9 +52,13 @@
     padding:calc(env(safe-area-inset-top) + 14px) 24px 0;flex:0 0 auto}
   .brand img{width:26px;height:26px;flex:0 0 auto;display:block}
   .brand span{font-family:'Source Serif 4',serif;font-size:1.2rem;font-weight:600;font-style:italic;letter-spacing:-0.01em}
+  .gearbtn{margin-left:auto;flex:0 0 auto;width:38px;height:38px;border-radius:9px;background:var(--card);
+    border:1px solid var(--border);color:var(--muted2);cursor:pointer;display:flex;align-items:center;
+    justify-content:center;-webkit-tap-highlight-color:transparent}
+  .gearbtn .msr{font-size:22px}
 
-  .chips{display:flex;gap:8px;overflow-x:auto;padding:12px 20px 4px;flex:0 0 auto;-webkit-overflow-scrolling:touch}
-  .chips::-webkit-scrollbar{display:none}
+  /* Chips wrap onto a second line so every pinned flow stays visible. */
+  .chips{display:flex;flex-wrap:wrap;gap:8px;padding:12px 20px 4px;flex:0 0 auto}
   .chip{flex:0 0 auto;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:0.68rem;
     letter-spacing:0.06em;text-transform:uppercase;padding:8px 14px;border-radius:6px;cursor:pointer;
     -webkit-tap-highlight-color:transparent}
@@ -92,7 +96,31 @@
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .wfrow-meta{font-family:'IBM Plex Mono',monospace;font-size:0.58rem;font-weight:600;letter-spacing:0.06em;
     text-transform:uppercase;color:var(--muted)}
+  .wfrow-del{width:40px;height:40px;flex:0 0 auto;border-radius:8px;background:none;border:none;
+    color:var(--remove);cursor:pointer;display:flex;align-items:center;justify-content:center;
+    -webkit-tap-highlight-color:transparent}
+  .wfrow-del .msr{font-size:21px}
   .sheet-done{width:100%;margin-top:6px;flex:0 0 auto}
+
+  /* Settings sheet */
+  .set-list{display:flex;flex-direction:column;gap:8px;margin:12px 0 4px}
+  .setrow{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--border);
+    border-radius:10px;padding:12px 12px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .setrow-btn{width:100%;text-align:left;font:inherit}
+  .swatch{width:22px;height:22px;flex:0 0 auto;border-radius:999px;border:1px solid rgba(36,31,26,0.18)}
+  .setlabel{flex:1;font-family:'Source Serif 4',serif;font-size:1.05rem;font-weight:600;color:var(--ink)}
+  .colorinput{width:46px;height:34px;flex:0 0 auto;padding:0;border:1px solid var(--border);border-radius:8px;
+    background:var(--field);cursor:pointer}
+  .colorinput::-webkit-color-swatch-wrapper{padding:3px}
+  .colorinput::-webkit-color-swatch{border:none;border-radius:5px}
+  .set-reset{background:none;border:none;color:var(--muted);font-family:'IBM Plex Mono',monospace;
+    font-size:0.65rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;padding:8px 4px;text-align:left}
+  .toggle{width:46px;height:28px;flex:0 0 auto;border-radius:999px;background:var(--border2);
+    position:relative;transition:background 0.16s}
+  .toggle.on{background:var(--done)}
+  .toggle .knob{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:999px;background:var(--card);
+    box-shadow:0 1px 2px rgba(36,31,26,0.3);transition:left 0.16s}
+  .toggle.on .knob{left:21px}
 
   .header{padding:20px 24px 2px;flex:0 0 auto}
   .wfname{font-family:'Source Serif 4',serif;font-size:1.75rem;font-weight:600;letter-spacing:-0.01em;margin:0}
