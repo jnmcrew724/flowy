@@ -109,10 +109,23 @@
   .setrow-btn{width:100%;text-align:left;font:inherit}
   .swatch{width:22px;height:22px;flex:0 0 auto;border-radius:999px;border:1px solid rgba(36,31,26,0.18)}
   .setlabel{flex:1;font-family:'Source Serif 4',serif;font-size:1.05rem;font-weight:600;color:var(--ink)}
-  .colorinput{width:46px;height:34px;flex:0 0 auto;padding:0;border:1px solid var(--border);border-radius:8px;
-    background:var(--field);cursor:pointer}
-  .colorinput::-webkit-color-swatch-wrapper{padding:3px}
-  .colorinput::-webkit-color-swatch{border:none;border-radius:5px}
+  .setval{font-family:'IBM Plex Mono',monospace;font-size:0.68rem;font-weight:600;letter-spacing:0.04em;color:var(--muted)}
+  .setcaret{font-size:20px;color:var(--muted);margin-left:2px}
+
+  /* Drag-to-pick color control */
+  .setcolor{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--border);
+    border-radius:10px;overflow:hidden}
+  .setcolor.open{border-color:var(--border2)}
+  .setcolor .setrow{border:none;background:none;border-radius:0}
+  .picker{padding:0 12px 14px;display:flex;flex-direction:column;gap:14px}
+  .sv-square{position:relative;width:100%;height:158px;border-radius:10px;touch-action:none;cursor:crosshair;
+    border:1px solid rgba(36,31,26,0.12)}
+  .sv-thumb{position:absolute;width:20px;height:20px;border-radius:999px;border:2px solid #fff;
+    box-shadow:0 0 0 1.5px rgba(0,0,0,0.4),0 1px 3px rgba(0,0,0,0.4);transform:translate(-50%,-50%);pointer-events:none}
+  .hue-bar{position:relative;width:100%;height:22px;border-radius:999px;touch-action:none;cursor:pointer;
+    background:linear-gradient(to right,#f00 0%,#ff0 17%,#0f0 33%,#0ff 50%,#00f 67%,#f0f 83%,#f00 100%)}
+  .hue-thumb{position:absolute;top:50%;width:24px;height:24px;border-radius:999px;border:2px solid #fff;
+    box-shadow:0 0 0 1.5px rgba(0,0,0,0.4),0 1px 3px rgba(0,0,0,0.4);transform:translate(-50%,-50%);pointer-events:none}
   .set-reset{background:none;border:none;color:var(--muted);font-family:'IBM Plex Mono',monospace;
     font-size:0.65rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;padding:8px 4px;text-align:left}
   .toggle{width:46px;height:28px;flex:0 0 auto;border-radius:999px;background:var(--border2);
