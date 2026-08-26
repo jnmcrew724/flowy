@@ -52,6 +52,9 @@ Numbering is a simple running counter — each release just goes up one tenth: *
 
 ## Changelog
 
+### v1.5
+- Added a **Sorting / organizing** group to the step-icon picker (sort, swap, filter, low-priority, category, stacks, layers, kanban, inventory, move-to-inbox, sort-by-alpha) — for steps about sorting things into piles.
+
 ### v1.4
 - Settings button is now a **gear icon** (drawn inline as SVG, so it always renders and never falls back to the word "tune").
 
