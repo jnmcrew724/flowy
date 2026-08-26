@@ -46,11 +46,15 @@ Defaults live in `app.js` (`DEFAULT_SETTINGS`): `tapMode` (`red-yellow-green` | 
 
 ## Versioning
 
-The app version is a single constant, `VERSION`, near the top of `app.js`. It's shown as a `v1.0` pill next to the wordmark and at the bottom of the Settings sheet. **On each release, bump `VERSION`, add a CHANGELOG entry below, bump the `CACHE` name in `sw.js` (so installed copies update), and tag the merge commit** (`git tag vX.Y && git push origin vX.Y`).
+The app version is a single constant, `VERSION`, near the top of `app.js`. It's shown as a `v1.3` pill next to the wordmark and at the bottom of the Settings sheet. **On each release, bump `VERSION`, add a CHANGELOG entry below, and bump the `CACHE` name in `sw.js`** (so installed copies update).
 
-Numbering is loose semver: **minor** bump (1.0 → 1.1) for a new feature, **patch** (1.0 → 1.0.1) for a small fix or tweak.
+Numbering is a simple running counter — each release just goes up one tenth: **1.3 → 1.4 → 1.5 → …** (no three-part patch numbers).
 
 ## Changelog
+
+### v1.3
+- Sync-setup polish: the sync box now accepts the **entire Firebase snippet** (import lines and all), not just the config object. Bottom sheets (Settings/Manage) now sit **above the mobile keyboard** and scroll, so controls like the sync **Connect** button are always reachable on a phone.
+- Switched to simple running version numbers (1.3, 1.4, …).
 
 ### v1.2
 - **Cross-device sync (optional).** Settings → *Sync across devices* connects Flowy to a Firebase Realtime Database so your phone, the website, and the desktop widget all share one set of flows. Offline still works (localStorage stays the cache); changes push/pull when online and resolve last-edit-wins by timestamp. A one-paste **device link** (Firebase config + private sync code, base64) links additional devices. When sync isn't configured, Flowy behaves exactly as before. See [SYNC-SETUP.md](SYNC-SETUP.md) for the one-time Firebase setup.
