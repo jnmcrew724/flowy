@@ -6,7 +6,7 @@
   var KEY = 'flow-app-v2';
   // App version — bump this one line on each release (see CHANGELOG in README).
   // Shown next to the wordmark and at the bottom of the Settings sheet.
-  var VERSION = '1.5';
+  var VERSION = '1.6';
   // How many workflows can be "pinned" (shown as chips up top) at once.
   var MAX_ACTIVE = 4;
   // Material Symbols Rounded ligature names, grouped by theme so the picker browses well.
@@ -317,6 +317,30 @@
     state.workflows = state.workflows.map(function (w) { return w.id === id ? fn(w) : w; });
     persist(); render();
   }
+  // Reorder whole workflows (drag in the Manage sheet) — this is also the order
+  // the pinned chips appear across the top.
+  function swapWf(a, b) {
+    var arr = state.workflows.slice();
+    var t = arr[a]; arr[a] = arr[b]; arr[b] = t;
+    setState({ workflows: arr });
+  }
+  function beginWfDrag(e, idx) {
+    e.preventDefault();
+    var ROW = 62, curr = idx, startY = e.clientY;
+    setState({ wfDragId: state.workflows[idx].id });
+    function move(ev) {
+      var dy = ev.clientY - startY, n = state.workflows.length;
+      if (dy > ROW / 2 && curr < n - 1) { swapWf(curr, curr + 1); curr++; startY += ROW; }
+      else if (dy < -ROW / 2 && curr > 0) { swapWf(curr, curr - 1); curr--; startY -= ROW; }
+    }
+    function up() {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      setState({ wfDragId: null });
+    }
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  }
   function palette() {
     var p = settings.palette;
     return (Array.isArray(p) && p.length >= 3) ? p : ['#a8503f','#a3781f','#3f7d5a'];
@@ -588,13 +612,18 @@
       var panel = el('div', { 'class': 'sheet', onClick: function (ev) { ev.stopPropagation(); } });
       panel.appendChild(el('div', { 'class': 'sheet-title', text: 'Workflows' }));
       panel.appendChild(el('div', { 'class': 'sheet-sub',
-        text: 'Pin up to ' + MAX_ACTIVE + ' to show up top · ' + actN + '/' + MAX_ACTIVE + ' pinned' }));
+        text: 'Pin up to ' + MAX_ACTIVE + ' to show up top · ' + actN + '/' + MAX_ACTIVE + ' pinned'
+          + (s.workflows.length > 1 ? ' · drag ⠿ to reorder' : '') }));
       if (s.capNote) panel.appendChild(el('div', { 'class': 'sheet-note',
         text: 'That’s ' + MAX_ACTIVE + ' pinned — unpin one to make room.' }));
       var wlist = el('div', { 'class': 'sheet-list' });
-      s.workflows.forEach(function (x) {
+      s.workflows.forEach(function (x, i) {
         var pinned = !!x.active;
-        var row = el('div', { 'class': 'wfrow' + (x.id === w.id ? ' current' : '') }, [
+        var row = el('div', { 'class': 'wfrow' + (x.id === w.id ? ' current' : '') + (s.wfDragId === x.id ? ' dragging' : '') }, [
+          (s.workflows.length > 1 ? el('span', {
+            'class': 'wfdrag', text: '⠿', 'aria-label': 'Drag to reorder',
+            onPointerdown: (function (idx) { return function (ev) { beginWfDrag(ev, idx); }; })(i)
+          }) : null),
           el('button', {
             'class': 'pin' + (pinned ? ' on' : ''),
             'aria-label': pinned ? 'Unpin workflow' : 'Pin workflow',
