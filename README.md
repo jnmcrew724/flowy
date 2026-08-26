@@ -52,6 +52,9 @@ Numbering is a simple running counter — each release just goes up one tenth: *
 
 ## Changelog
 
+### v1.4
+- Settings button is now a **gear icon** (drawn inline as SVG, so it always renders and never falls back to the word "tune").
+
 ### v1.3
 - Sync-setup polish: the sync box now accepts the **entire Firebase snippet** (import lines and all), not just the config object. Bottom sheets (Settings/Manage) now sit **above the mobile keyboard** and scroll, so controls like the sync **Connect** button are always reachable on a phone.
 - Switched to simple running version numbers (1.3, 1.4, …).
