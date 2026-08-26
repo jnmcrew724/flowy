@@ -73,10 +73,14 @@
     background:var(--card);border:1px solid var(--border);padding:6px 12px}
 
   /* Manage-workflows sheet */
-  .sheet-backdrop{position:absolute;inset:0;z-index:60;display:flex;flex-direction:column;justify-content:flex-end;
+  /* Height tracks the *visible* viewport (--vvh, set in JS) so when the mobile
+     keyboard opens, the sheet sits above it and its content stays reachable. */
+  .sheet-backdrop{position:absolute;left:0;right:0;top:0;height:var(--vvh,100%);z-index:60;display:flex;
+    flex-direction:column;justify-content:flex-end;
     background:rgba(36,31,26,0.32);animation:flowPop 0.14s ease-out;-webkit-tap-highlight-color:transparent}
   .sheet{background:var(--paper);border-radius:18px 18px 0 0;border-top:1px solid var(--border);
-    padding:18px 20px calc(env(safe-area-inset-bottom) + 16px);max-height:78%;display:flex;flex-direction:column;
+    padding:18px 20px calc(env(safe-area-inset-bottom) + 16px);max-height:100%;display:flex;flex-direction:column;
+    overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
     box-shadow:0 -12px 40px rgba(36,31,26,0.18)}
   .sheet-title{font-family:'Source Serif 4',serif;font-size:1.35rem;font-weight:600;letter-spacing:-0.01em}
   .sheet-sub{font-family:'IBM Plex Mono',monospace;font-size:0.62rem;font-weight:600;letter-spacing:0.07em;
