@@ -6,7 +6,7 @@
   var KEY = 'flow-app-v2';
   // App version — bump this one line on each release (see CHANGELOG in README).
   // Shown next to the wordmark and at the bottom of the Settings sheet.
-  var VERSION = '1.2';
+  var VERSION = '1.2.1';
   // How many workflows can be "pinned" (shown as chips up top) at once.
   var MAX_ACTIVE = 4;
   // Material Symbols Rounded ligature names, grouped by theme so the picker browses well.
@@ -144,11 +144,16 @@
   function makeDeviceLink() { return b64enc(JSON.stringify({ config: sync.config, code: sync.code })); }
   function parseDeviceLink(str) { var o = JSON.parse(b64dec((str || '').trim())); if (!o.config || !o.code) throw new Error('bad link'); return o; }
 
-  // Accept a pasted Firebase config as JSON or a JS snippet (unquoted keys ok).
+  // Accept a pasted Firebase config as JSON, a bare {…} object, or the whole
+  // Firebase snippet (import lines + initializeApp) — we pull out just the
+  // object assigned to firebaseConfig. Unquoted keys and trailing commas ok.
   function parseConfig(text) {
-    var m = (text || '').match(/\{[\s\S]*\}/);
-    if (!m) throw new Error('No { … } config found');
-    var body = m[0];
+    text = text || '';
+    var body = null;
+    var m = text.match(/firebaseConfig\s*=\s*(\{[\s\S]*?\})\s*;?/);   // the actual config object, if a full snippet was pasted
+    if (m) body = m[1];
+    if (!body) { var m2 = text.match(/\{[\s\S]*\}/); if (m2) body = m2[0]; }
+    if (!body) throw new Error('No { … } config found');
     try { return JSON.parse(body); } catch (e) {}
     var fixed = body.replace(/([,{]\s*)([A-Za-z0-9_]+)\s*:/g, '$1"$2":').replace(/'/g, '"').replace(/,(\s*[}\]])/g, '$1');
     return JSON.parse(fixed);
