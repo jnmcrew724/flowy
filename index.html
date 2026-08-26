@@ -93,6 +93,9 @@
   .wfrow{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);
     border-radius:10px;padding:6px 8px}
   .wfrow.current{border-color:var(--border2);background:var(--cream)}
+  .wfrow.dragging{border-color:var(--border2);background:var(--field);opacity:0.92}
+  .wfdrag{flex:0 0 auto;cursor:grab;touch-action:none;user-select:none;color:var(--handle);
+    font-size:1.15rem;line-height:1;padding:8px 4px;-webkit-tap-highlight-color:transparent}
   .pin{width:44px;height:44px;flex:0 0 auto;border-radius:8px;background:var(--field);border:1px solid var(--border);
     cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
   .pin .msr{font-size:21px;color:var(--handle);transform:rotate(45deg)}

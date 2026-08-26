@@ -52,6 +52,9 @@ Numbering is a simple running counter — each release just goes up one tenth: *
 
 ## Changelog
 
+### v1.6
+- **Reorder workflows** by dragging the `⠿` handle in the Manage (`⋯`) sheet — this also sets the order the pinned chips appear across the top.
+
 ### v1.5
 - Added a **Sorting / organizing** group to the step-icon picker (sort, swap, filter, low-priority, category, stacks, layers, kanban, inventory, move-to-inbox, sort-by-alpha) — for steps about sorting things into piles.
 
