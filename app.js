@@ -6,7 +6,7 @@
   var KEY = 'flow-app-v2';
   // App version — bump this one line on each release (see CHANGELOG in README).
   // Shown next to the wordmark and at the bottom of the Settings sheet.
-  var VERSION = '1.2.2';
+  var VERSION = '1.3';
   // How many workflows can be "pinned" (shown as chips up top) at once.
   var MAX_ACTIVE = 4;
   // Material Symbols Rounded ligature names, grouped by theme so the picker browses well.
