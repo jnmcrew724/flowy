@@ -207,30 +207,39 @@
   .progress-fill{display:block;height:100%;border-radius:999px;transition:width 0.3s}
   .progress-cap{font-family:'IBM Plex Mono',monospace;font-size:0.6rem;font-weight:600;letter-spacing:0.04em;color:var(--muted)}
 
-  /* ===== Compact widget mode ===== */
-  body.widget .brand{padding-top:calc(env(safe-area-inset-top) + 8px);gap:7px}
-  body.widget .brand img{width:20px;height:20px}
-  body.widget .brand span{font-size:1rem}
+  /* ===== Compact widget mode — tiny, dense; sized to park in a corner ===== */
+  body.widget #app{background:linear-gradient(180deg,#f6e3d8 0%,var(--paper) 14%)}
+  body.widget .brand{padding:calc(env(safe-area-inset-top) + 6px) 12px 0;gap:6px}
+  body.widget .brand img{width:16px;height:16px}
+  body.widget .brand span{font-size:0.82rem}
   body.widget .ver{display:none}
-  body.widget .gearbtn{width:32px;height:32px}
-  body.widget .gearbtn .msr{font-size:19px}
-  body.widget .chips{flex-wrap:nowrap;overflow-x:auto;padding:8px 14px 2px;gap:6px;-webkit-overflow-scrolling:touch}
+  body.widget .gearbtn{width:26px;height:26px;border-radius:7px}
+  body.widget .gearbtn .msr{font-size:16px}
+  body.widget .chips{flex-wrap:nowrap;overflow-x:auto;padding:6px 10px 2px;gap:5px;-webkit-overflow-scrolling:touch}
   body.widget .chips::-webkit-scrollbar{display:none}
-  body.widget .chip{font-size:0.6rem;padding:6px 10px}
-  body.widget .chip.add,body.widget .chip.manage{padding:5px 9px}
-  body.widget .header{padding:10px 16px 2px}
-  body.widget .wfname{font-size:1.15rem}
-  body.widget .wfname-input{font-size:1.05rem;padding:6px 10px}
-  body.widget .subline{font-size:0.56rem;margin-top:5px;padding-top:6px}
-  body.widget .progress{display:flex}
-  body.widget .list{padding:8px 14px 6px;gap:6px}
-  body.widget .step{min-height:44px;padding:8px 12px;gap:10px;border-radius:8px}
-  body.widget .step .ic{width:30px;height:30px}
-  body.widget .step .ic .msr{font-size:16px}
-  body.widget .step .nm{font-size:0.95rem}
-  body.widget .step .tag{font-size:0.55rem}
-  body.widget .footer{padding:8px 14px calc(env(safe-area-inset-bottom) + 8px);gap:8px}
-  body.widget .btn{padding:9px 13px;font-size:0.62rem}
+  body.widget .chip{font-size:0.52rem;padding:4px 7px;border-radius:5px;letter-spacing:0.04em}
+  body.widget .chip.add,body.widget .chip.manage{font-size:0.72rem;padding:3px 7px;line-height:1}
+  body.widget .header{padding:6px 12px 0}
+  body.widget .wfname{font-size:0.92rem}
+  body.widget .wfname-input{font-size:0.85rem;padding:5px 8px;border-radius:6px}
+  body.widget .subline{display:none}
+  body.widget .header .subline.done{display:block;font-size:0.5rem;margin-top:4px;padding-top:5px}
+  body.widget .progress{display:flex;margin-top:6px;gap:6px}
+  body.widget .progress-track{height:5px}
+  body.widget .progress-cap{font-size:0.52rem}
+  body.widget .list{padding:5px 9px 3px;gap:3px}
+  body.widget .step{min-height:0;padding:3px 8px;gap:7px;border-radius:6px}
+  body.widget .step .ic{width:17px;height:17px}
+  body.widget .step .ic .msr{font-size:11px}
+  body.widget .step .nm{font-size:0.74rem;line-height:1.1}
+  body.widget .step .tag{font-size:0.44rem;letter-spacing:0.05em}
+  body.widget .footer{padding:6px 10px calc(env(safe-area-inset-bottom) + 6px);gap:6px}
+  body.widget .btn{padding:6px 10px;font-size:0.55rem;border-radius:6px}
+  /* Edit-mode rows shrink too, so editing stays usable in the small window. */
+  body.widget .erow{padding:5px 7px;gap:5px}
+  body.widget .nameinput{padding:6px 9px;font-size:14px}
+  body.widget .icbtn{width:34px;height:34px}
+  body.widget .drag{font-size:0.9rem;padding:4px 3px}
 </style>
 </head>
 <body>

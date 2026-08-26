@@ -52,6 +52,9 @@ Numbering is loose semver: **minor** bump (1.0 → 1.1) for a new feature, **pat
 
 ## Changelog
 
+### v1.1.1
+- Made compact widget mode **much smaller and denser** — short rows, tiny icons, tighter spacing, hidden date line — so it reads like a small desktop reminders widget. Drag the pinned window narrow and it packs tightly.
+
 ### v1.1
 - **Compact widget mode** — a denser, minimal-chrome layout for running Flowy in a small pinned window (e.g. a corner of the desktop). Turns on automatically when the window is small, or manually via a Settings toggle. Adds a slim progress bar (done/total) in the header while in this mode.
 - Pin Flowy as a standalone desktop app via your browser: Safari → *File → Add to Dock*, or Chrome/Edge → *Install page as app*.
