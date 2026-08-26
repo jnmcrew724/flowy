@@ -195,6 +195,42 @@
 
   .confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:50}
   .confetti i{position:absolute;top:-24px;display:block}
+
+  /* Settings hint line under a toggle label */
+  .sethint{display:block;font-family:'IBM Plex Mono',monospace;font-size:0.55rem;font-weight:600;
+    letter-spacing:0.03em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+
+  /* Progress bar — hidden by default, revealed in compact widget mode. */
+  .progress{display:none;align-items:center;gap:8px;margin-top:9px}
+  .progress-track{flex:1;height:6px;border-radius:999px;background:var(--field);overflow:hidden;
+    box-shadow:inset 0 0 0 1px var(--border)}
+  .progress-fill{display:block;height:100%;border-radius:999px;transition:width 0.3s}
+  .progress-cap{font-family:'IBM Plex Mono',monospace;font-size:0.6rem;font-weight:600;letter-spacing:0.04em;color:var(--muted)}
+
+  /* ===== Compact widget mode ===== */
+  body.widget .brand{padding-top:calc(env(safe-area-inset-top) + 8px);gap:7px}
+  body.widget .brand img{width:20px;height:20px}
+  body.widget .brand span{font-size:1rem}
+  body.widget .ver{display:none}
+  body.widget .gearbtn{width:32px;height:32px}
+  body.widget .gearbtn .msr{font-size:19px}
+  body.widget .chips{flex-wrap:nowrap;overflow-x:auto;padding:8px 14px 2px;gap:6px;-webkit-overflow-scrolling:touch}
+  body.widget .chips::-webkit-scrollbar{display:none}
+  body.widget .chip{font-size:0.6rem;padding:6px 10px}
+  body.widget .chip.add,body.widget .chip.manage{padding:5px 9px}
+  body.widget .header{padding:10px 16px 2px}
+  body.widget .wfname{font-size:1.15rem}
+  body.widget .wfname-input{font-size:1.05rem;padding:6px 10px}
+  body.widget .subline{font-size:0.56rem;margin-top:5px;padding-top:6px}
+  body.widget .progress{display:flex}
+  body.widget .list{padding:8px 14px 6px;gap:6px}
+  body.widget .step{min-height:44px;padding:8px 12px;gap:10px;border-radius:8px}
+  body.widget .step .ic{width:30px;height:30px}
+  body.widget .step .ic .msr{font-size:16px}
+  body.widget .step .nm{font-size:0.95rem}
+  body.widget .step .tag{font-size:0.55rem}
+  body.widget .footer{padding:8px 14px calc(env(safe-area-inset-bottom) + 8px);gap:8px}
+  body.widget .btn{padding:9px 13px;font-size:0.62rem}
 </style>
 </head>
 <body>

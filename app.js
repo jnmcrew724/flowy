@@ -6,7 +6,7 @@
   var KEY = 'flow-app-v2';
   // App version — bump this one line on each release (see CHANGELOG in README).
   // Shown next to the wordmark and at the bottom of the Settings sheet.
-  var VERSION = '1.0';
+  var VERSION = '1.1';
   // How many workflows can be "pinned" (shown as chips up top) at once.
   var MAX_ACTIVE = 4;
   // Material Symbols Rounded ligature names, grouped by theme so the picker browses well.
@@ -36,7 +36,7 @@
 
   // Settings (persisted). Defaults match the prototype's defaults.
   var SKEY = 'flow-settings-v1';
-  var DEFAULT_SETTINGS = { tapMode: 'red-green', autoReset: true, celebration: true, palette: ['#a8503f','#a3781f','#3f7d5a'] };
+  var DEFAULT_SETTINGS = { tapMode: 'red-green', autoReset: true, celebration: true, palette: ['#a8503f','#a3781f','#3f7d5a'], widget: false };
   function loadSettings() {
     try {
       var raw = localStorage.getItem(SKEY);
@@ -45,6 +45,14 @@
     return Object.assign({}, DEFAULT_SETTINGS);
   }
   var settings = loadSettings();
+
+  // Compact "widget" layout: on when the user forces it in Settings, OR when
+  // the window is small (so pinning Flowy small in a corner just works).
+  function applyWidgetClass() {
+    var small = window.innerWidth <= 380 || window.innerHeight <= 540;
+    document.body.classList.toggle('widget', !!settings.widget || small);
+  }
+  window.addEventListener('resize', applyWidgetClass);
 
   function today() { var d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
   function uid() { return 'x' + Math.random().toString(36).slice(2, 8); }
@@ -341,6 +349,18 @@
     var sub = el('div', { 'class': 'subline' + (allDone && !s.editing ? ' done' : ''),
       text: s.editing ? 'Drag ⠿ to reorder · tap icon to swap' : (allDone ? 'All clear — flow complete' : dateLine()) });
     header.appendChild(sub);
+    // Slim progress bar (visible in widget mode) — done steps at a glance.
+    if (!s.editing) {
+      var doneN = w.steps.filter(function (p) { return p.st === 2; }).length;
+      var totN = w.steps.length;
+      var pct = totN ? Math.round(doneN / totN * 100) : 0;
+      header.appendChild(el('div', { 'class': 'progress', 'aria-label': doneN + ' of ' + totN + ' done' }, [
+        el('span', { 'class': 'progress-track' }, [
+          el('i', { 'class': 'progress-fill', style: 'width:' + pct + '%;background:' + pal[2] })
+        ]),
+        el('span', { 'class': 'progress-cap', text: doneN + '/' + totN })
+      ]));
+    }
     frag.appendChild(header);
 
     // List
@@ -582,6 +602,14 @@
         el('span', { 'class': 'setlabel', text: 'Include an “In progress” step' }),
         el('span', { 'class': 'toggle' + (three ? ' on' : '') }, [ el('span', { 'class': 'knob' }) ])
       ]));
+      behBody.appendChild(el('button', { 'class': 'setrow setrow-btn', 'aria-label': 'Toggle compact widget mode',
+        onClick: function () { saveSettings({ widget: !settings.widget }); } }, [
+        el('span', { 'class': 'setlabel' }, [
+          el('span', { text: 'Compact widget mode' }),
+          el('span', { 'class': 'sethint', text: 'Denser layout · auto-on in a small window' })
+        ]),
+        el('span', { 'class': 'toggle' + (settings.widget ? ' on' : '') }, [ el('span', { 'class': 'knob' }) ])
+      ]));
       sPanel.appendChild(behBody);
 
       sPanel.appendChild(el('div', { 'class': 'set-ver', text: 'Flowy · v' + VERSION }));
@@ -604,6 +632,7 @@
 
     app.innerHTML = '';
     app.appendChild(frag);
+    applyWidgetClass();
   }
 
   // Mutate the active workflow WITHOUT re-rendering (used for text inputs so
