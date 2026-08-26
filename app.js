@@ -6,7 +6,7 @@
   var KEY = 'flow-app-v2';
   // App version — bump this one line on each release (see CHANGELOG in README).
   // Shown next to the wordmark and at the bottom of the Settings sheet.
-  var VERSION = '1.1.1';
+  var VERSION = '1.2';
   // How many workflows can be "pinned" (shown as chips up top) at once.
   var MAX_ACTIVE = 4;
   // Material Symbols Rounded ligature names, grouped by theme so the picker browses well.
@@ -75,7 +75,7 @@
         ]}
       ],
       activeId: 'w1', editing: false, pickerFor: null, dragId: null,
-      managing: false, capNote: false, settingsOpen: false, colorPickerFor: null, confetti: null, lastReset: today()
+      managing: false, capNote: false, settingsOpen: false, colorPickerFor: null, confetti: null, lastReset: today(), updatedAt: 0
     };
   }
 
@@ -100,7 +100,7 @@
           if (!wfs.some(function (w) { return w.id === aid && w.active; })) {
             aid = wfs.filter(function (w) { return w.active; })[0].id;
           }
-          return { workflows: wfs, activeId: aid, editing: false, pickerFor: null, dragId: null, managing: false, capNote: false, settingsOpen: false, colorPickerFor: null, confetti: null, lastReset: d.lastReset || today() };
+          return { workflows: wfs, activeId: aid, editing: false, pickerFor: null, dragId: null, managing: false, capNote: false, settingsOpen: false, colorPickerFor: null, confetti: null, lastReset: d.lastReset || today(), updatedAt: d.updatedAt || 0 };
         }
       }
     } catch (e) {}
@@ -111,9 +111,131 @@
   var confettiTimer = null;
 
   function persist() {
-    try { localStorage.setItem(KEY, JSON.stringify({ workflows: state.workflows, activeId: state.activeId, lastReset: state.lastReset })); } catch (e) {}
+    if (!syncApplying) state.updatedAt = Date.now();
+    try { localStorage.setItem(KEY, JSON.stringify({ workflows: state.workflows, activeId: state.activeId, lastReset: state.lastReset, updatedAt: state.updatedAt || 0 })); } catch (e) {}
+    if (!syncApplying) syncPush();
   }
   function setState(patch) { Object.assign(state, patch); persist(); render(); }
+
+  // ================= Cross-device sync (Firebase Realtime Database) =================
+  // Optional. When configured, the same data blob localStorage holds is mirrored
+  // to Firebase under a private "sync code". Any device with the same config +
+  // code shares one Flowy. Offline still works (localStorage is the cache);
+  // conflicts resolve last-edit-wins by timestamp.
+  var SYNCKEY = 'flow-sync-v1';
+  var FBV = '10.12.5';
+  var FB_CDN = [
+    'https://www.gstatic.com/firebasejs/' + FBV + '/firebase-app-compat.js',
+    'https://www.gstatic.com/firebasejs/' + FBV + '/firebase-auth-compat.js',
+    'https://www.gstatic.com/firebasejs/' + FBV + '/firebase-database-compat.js'
+  ];
+  function loadSync() { try { return JSON.parse(localStorage.getItem(SYNCKEY)) || {}; } catch (e) { return {}; } }
+  function saveSync() { try { localStorage.setItem(SYNCKEY, JSON.stringify(sync)); } catch (e) {} }
+  var sync = loadSync();
+  var syncApplying = false;
+  var fb = { ready: false, ref: null, clientId: null, status: sync.enabled ? 'connecting' : 'off', error: '' };
+
+  function setSyncStatus(s, err) { fb.status = s; fb.error = err || ''; if (state.settingsOpen) render(); }
+  function currentPayload() { return { workflows: state.workflows, activeId: state.activeId, lastReset: state.lastReset }; }
+
+  // Unicode-safe base64 for the one-paste "device link".
+  function b64enc(str) { return btoa(unescape(encodeURIComponent(str))); }
+  function b64dec(str) { return decodeURIComponent(escape(atob(str))); }
+  function makeDeviceLink() { return b64enc(JSON.stringify({ config: sync.config, code: sync.code })); }
+  function parseDeviceLink(str) { var o = JSON.parse(b64dec((str || '').trim())); if (!o.config || !o.code) throw new Error('bad link'); return o; }
+
+  // Accept a pasted Firebase config as JSON or a JS snippet (unquoted keys ok).
+  function parseConfig(text) {
+    var m = (text || '').match(/\{[\s\S]*\}/);
+    if (!m) throw new Error('No { … } config found');
+    var body = m[0];
+    try { return JSON.parse(body); } catch (e) {}
+    var fixed = body.replace(/([,{]\s*)([A-Za-z0-9_]+)\s*:/g, '$1"$2":').replace(/'/g, '"').replace(/,(\s*[}\]])/g, '$1');
+    return JSON.parse(fixed);
+  }
+  function sanitizeCode(c) { return String(c || '').replace(/[.#$\[\]\/]/g, '-').replace(/\s+/g, '-'); }
+  function randomCode() { return 'flowy-' + Math.random().toString(36).slice(2, 8) + Math.random().toString(36).slice(2, 8); }
+
+  // Normalize a remote data blob the same way load() treats stored data.
+  function normalizeData(d) {
+    if (!d || !d.workflows || !d.workflows.length) return null;
+    var wfs = d.workflows.map(function (w) {
+      return Object.assign({}, w, { steps: (w.steps || []).map(function (p) { return Object.assign({}, p, { icon: fixIcon(p.icon) }); }) });
+    });
+    var hasFlag = wfs.some(function (w) { return typeof w.active === 'boolean'; });
+    wfs = wfs.map(function (w, i) { return Object.assign({}, w, { active: hasFlag ? !!w.active : i < MAX_ACTIVE }); });
+    if (!wfs.some(function (w) { return w.active; })) wfs[0].active = true;
+    var aid = d.activeId;
+    if (!wfs.some(function (w) { return w.id === aid && w.active; })) aid = wfs.filter(function (w) { return w.active; })[0].id;
+    return { workflows: wfs, activeId: aid, lastReset: d.lastReset || today() };
+  }
+
+  function syncPush() {
+    if (!fb.ready || syncApplying) return;
+    if (!state.updatedAt) state.updatedAt = Date.now();
+    try { fb.ref.set({ data: currentPayload(), updatedAt: state.updatedAt, from: fb.clientId }); } catch (e) {}
+  }
+  function applyRemote(v) {
+    var norm = normalizeData(v && v.data);
+    if (!norm) return;
+    syncApplying = true;
+    state.workflows = norm.workflows; state.activeId = norm.activeId; state.lastReset = norm.lastReset;
+    state.updatedAt = v.updatedAt || Date.now();
+    persist();            // refresh local cache without bumping timestamp or re-pushing
+    syncApplying = false;
+    render();
+  }
+  function onRemote(snap) {
+    var v = snap.val();
+    if (!v || !v.data) { syncPush(); return; }   // remote empty → seed from this device
+    var rt = v.updatedAt || 0, lt = state.updatedAt || 0;
+    if (rt > lt) applyRemote(v);
+    else if (rt < lt) syncPush();                 // this device is newer → push
+  }
+
+  function loadScriptsSeq(list) {
+    return list.reduce(function (chain, src) {
+      return chain.then(function () {
+        return new Promise(function (res, rej) {
+          if (document.querySelector('script[src="' + src + '"]')) return res();
+          var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = function () { rej(new Error('Failed to load ' + src)); };
+          document.head.appendChild(s);
+        });
+      });
+    }, Promise.resolve());
+  }
+  function initFirebase() {
+    if (!(sync.enabled && sync.config && sync.code)) { setSyncStatus('off'); return; }
+    setSyncStatus('connecting');
+    loadScriptsSeq(FB_CDN).then(function () {
+      if (!window.firebase) throw new Error('Firebase failed to load (offline?)');
+      if (!firebase.apps.length) firebase.initializeApp(sync.config);
+      return firebase.auth().signInAnonymously();
+    }).then(function (cred) {
+      fb.clientId = (cred && cred.user && cred.user.uid) || ('c' + Math.random().toString(36).slice(2));
+      if (fb.ref) { try { fb.ref.off('value', onRemote); } catch (e) {} }
+      fb.ref = firebase.database().ref('flows/' + sanitizeCode(sync.code));
+      fb.ready = true;
+      setSyncStatus('connected');
+      fb.ref.on('value', onRemote);
+    }).catch(function (e) {
+      fb.ready = false;
+      setSyncStatus('error', (e && e.message) || String(e));
+    });
+  }
+  function connectSync(config, code) {
+    sync = { enabled: true, config: config, code: sanitizeCode(code || randomCode()) };
+    saveSync();
+    fb.ready = false;
+    initFirebase();
+  }
+  function disconnectSync() {
+    if (fb.ref) { try { fb.ref.off('value', onRemote); } catch (e) {} }
+    fb.ready = false; fb.ref = null;
+    sync = { enabled: false };
+    saveSync();
+    setSyncStatus('off');
+  }
 
   function wf() { return state.workflows.filter(function (w) { return w.id === state.activeId; })[0] || state.workflows[0]; }
   function activeCount() { return state.workflows.filter(function (w) { return w.active; }).length; }
@@ -612,6 +734,53 @@
       ]));
       sPanel.appendChild(behBody);
 
+      // ---- Sync across devices ----
+      sPanel.appendChild(el('div', { 'class': 'sheet-sub', style: 'margin-top:18px', text: 'Sync across devices' }));
+      var syncBody = el('div', { 'class': 'set-list' });
+      var connected = !!(sync.enabled && sync.config && sync.code);
+      if (connected) {
+        var statusText = fb.status === 'connected' ? 'Connected · syncing'
+          : fb.status === 'connecting' ? 'Connecting…'
+          : fb.status === 'error' ? 'Not connected' : 'On';
+        syncBody.appendChild(el('div', { 'class': 'setrow', style: 'display:block' }, [
+          el('div', { 'class': 'syncstat ' + fb.status }, [ el('span', { 'class': 'syncdot' }), el('span', { text: statusText }) ]),
+          el('div', { 'class': 'sethint', style: 'margin-top:9px', text: 'Sync code' }),
+          el('div', { 'class': 'synccode', text: sync.code }),
+          (fb.status === 'error' && fb.error ? el('div', { 'class': 'sethint', style: 'color:var(--remove);margin-top:7px', text: fb.error }) : null)
+        ]));
+        syncBody.appendChild(el('button', { 'class': 'setrow setrow-btn', 'aria-label': 'Copy device link',
+          onClick: function () {
+            try { navigator.clipboard.writeText(makeDeviceLink()); } catch (e) {}
+            window.alert('Device link copied.\n\nOn your other device: open Flowy → Settings → Sync, and paste it into the box, then tap Connect.');
+          } }, [ el('span', { 'class': 'setlabel' }, [
+          el('span', { text: 'Copy device link' }),
+          el('span', { 'class': 'sethint', text: 'One paste links another device' })
+        ]) ]));
+        if (fb.status === 'error') syncBody.appendChild(el('button', { 'class': 'set-reset', text: 'Retry connection', onClick: function () { initFirebase(); } }));
+        syncBody.appendChild(el('button', { 'class': 'set-reset', style: 'color:var(--remove)', text: 'Turn off sync on this device',
+          onClick: function () { if (window.confirm('Turn off sync on this device? Your data stays here — it just stops syncing.')) disconnectSync(); } }));
+      } else {
+        syncBody.appendChild(el('div', { 'class': 'sethint', style: 'margin:0 2px 5px;text-transform:none;letter-spacing:0',
+          text: 'Paste a device link from an already-synced device, or your Firebase config, to share one Flowy everywhere. Set up on the device that has the flows you want to keep first.' }));
+        var ta = el('textarea', { 'class': 'syncinput', rows: '3', placeholder: 'Paste device link or Firebase config…', spellcheck: 'false', autocapitalize: 'off', autocorrect: 'off' });
+        var codeIn = el('input', { 'class': 'synccode-input', placeholder: 'Sync code (optional — auto-created)', spellcheck: 'false', autocapitalize: 'off' });
+        syncBody.appendChild(ta);
+        syncBody.appendChild(codeIn);
+        syncBody.appendChild(el('button', { 'class': 'btn solid', style: 'width:100%', text: 'Connect',
+          onClick: function () {
+            var raw = (ta.value || '').trim();
+            if (!raw) { window.alert('Paste a device link or your Firebase config first.'); return; }
+            try {
+              var link = null;
+              try { link = parseDeviceLink(raw); } catch (e) { link = null; }
+              if (link) connectSync(link.config, link.code);
+              else connectSync(parseConfig(raw), (codeIn.value || '').trim() || randomCode());
+            } catch (e) { window.alert('Could not read that. Paste the full Firebase config object, or a device link from another device.\n\n(' + ((e && e.message) || e) + ')'); }
+          } }));
+        if (fb.status === 'error' && fb.error) syncBody.appendChild(el('div', { 'class': 'sethint', style: 'color:var(--remove);margin-top:7px', text: fb.error }));
+      }
+      sPanel.appendChild(syncBody);
+
       sPanel.appendChild(el('div', { 'class': 'set-ver', text: 'Flowy · v' + VERSION }));
       sPanel.appendChild(el('button', { 'class': 'btn solid sheet-done', text: 'Done',
         onClick: function () { setState({ settingsOpen: false, colorPickerFor: null }); } }));
@@ -658,4 +827,7 @@
   }
 
   render();
+
+  // Kick off cross-device sync if it's been configured on this device.
+  if (sync.enabled && sync.config && sync.code) initFirebase();
 })();

@@ -122,6 +122,21 @@
   .scope-opt.on{background:var(--ink);color:var(--paper)}
   .set-cap{font-family:'IBM Plex Mono',monospace;font-size:0.6rem;font-weight:600;letter-spacing:0.05em;
     text-transform:uppercase;color:var(--muted);margin-top:8px}
+
+  /* Sync section */
+  .syncstat{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;
+    font-weight:600;letter-spacing:0.03em;color:var(--ink)}
+  .syncdot{width:9px;height:9px;border-radius:999px;background:var(--handle);flex:0 0 auto}
+  .syncstat.connected .syncdot{background:var(--green)}
+  .syncstat.connecting .syncdot{background:var(--amber)}
+  .syncstat.error .syncdot{background:var(--remove)}
+  .synccode{font-family:'IBM Plex Mono',monospace;font-size:0.72rem;font-weight:600;color:var(--ink);
+    background:var(--field);border:1px solid var(--border);border-radius:7px;padding:8px 10px;margin-top:4px;
+    word-break:break-all;user-select:all}
+  .syncinput,.synccode-input{width:100%;background:var(--field);border:1px solid var(--border);border-radius:8px;
+    padding:10px 11px;color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:13px;outline:none;resize:vertical}
+  .syncinput:focus,.synccode-input:focus{border-color:var(--ink)}
+  .synccode-input{resize:none}
   .setcaret{font-size:20px;color:var(--muted);margin-left:2px}
 
   /* Drag-to-pick color control */
