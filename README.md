@@ -52,6 +52,10 @@ Numbering is loose semver: **minor** bump (1.0 → 1.1) for a new feature, **pat
 
 ## Changelog
 
+### v1.1
+- **Compact widget mode** — a denser, minimal-chrome layout for running Flowy in a small pinned window (e.g. a corner of the desktop). Turns on automatically when the window is small, or manually via a Settings toggle. Adds a slim progress bar (done/total) in the header while in this mode.
+- Pin Flowy as a standalone desktop app via your browser: Safari → *File → Add to Dock*, or Chrome/Edge → *Install page as app*.
+
 ### v1.0
 - Baseline release. Single-screen PWA workflow tracker: tap steps to cycle status, multiple workflows with up-to-4 pinned chips (chips wrap so all stay visible), full edit mode (add/remove/rename/reorder steps, swap icons), auto-reset each day, confetti on completion, offline service worker.
 - Delete a workflow from the `⋯` Manage sheet.
