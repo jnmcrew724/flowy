@@ -6,7 +6,7 @@
   var KEY = 'flow-app-v2';
   // App version — bump this one line on each release (see CHANGELOG in README).
   // Shown next to the wordmark and at the bottom of the Settings sheet.
-  var VERSION = '1.2.1';
+  var VERSION = '1.2.2';
   // How many workflows can be "pinned" (shown as chips up top) at once.
   var MAX_ACTIVE = 4;
   // Material Symbols Rounded ligature names, grouped by theme so the picker browses well.
@@ -53,6 +53,19 @@
     document.body.classList.toggle('widget', !!settings.widget || small);
   }
   window.addEventListener('resize', applyWidgetClass);
+
+  // Track the *visible* viewport height so bottom sheets sit above the mobile
+  // keyboard (which shrinks visualViewport) instead of hiding behind it.
+  function setVVH() {
+    var h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+    document.documentElement.style.setProperty('--vvh', Math.round(h) + 'px');
+  }
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', setVVH);
+    window.visualViewport.addEventListener('scroll', setVVH);
+  }
+  window.addEventListener('resize', setVVH);
+  setVVH();
 
   function today() { var d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
   function uid() { return 'x' + Math.random().toString(36).slice(2, 8); }
