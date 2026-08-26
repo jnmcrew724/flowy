@@ -52,6 +52,9 @@ Numbering is loose semver: **minor** bump (1.0 → 1.1) for a new feature, **pat
 
 ## Changelog
 
+### v1.2
+- **Cross-device sync (optional).** Settings → *Sync across devices* connects Flowy to a Firebase Realtime Database so your phone, the website, and the desktop widget all share one set of flows. Offline still works (localStorage stays the cache); changes push/pull when online and resolve last-edit-wins by timestamp. A one-paste **device link** (Firebase config + private sync code, base64) links additional devices. When sync isn't configured, Flowy behaves exactly as before. See [SYNC-SETUP.md](SYNC-SETUP.md) for the one-time Firebase setup.
+
 ### v1.1.1
 - Made compact widget mode **much smaller and denser** — short rows, tiny icons, tighter spacing, hidden date line — so it reads like a small desktop reminders widget. Drag the pinned window narrow and it packs tightly.
 
