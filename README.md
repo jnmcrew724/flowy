@@ -52,6 +52,10 @@ Numbering is a simple running counter — each release just goes up one tenth: *
 
 ## Changelog
 
+### v1.7
+- **Per-flow auto-reset schedule.** Each workflow can reset **Daily**, **Weekly** (Monday), or **Off** (manual only) — set it in Edit mode. Replaces the single global daily reset; each flow tracks its own last-reset date, and resets are re-checked when the app regains focus. Room to add more intervals later.
+- The version badge now shows even in the tiny widget size (next to the logo).
+
 ### v1.6
 - **Reorder workflows** by dragging the `⠿` handle in the Manage (`⋯`) sheet — this also sets the order the pinned chips appear across the top.
 

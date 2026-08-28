@@ -6,7 +6,7 @@
   var KEY = 'flow-app-v2';
   // App version — bump this one line on each release (see CHANGELOG in README).
   // Shown next to the wordmark and at the bottom of the Settings sheet.
-  var VERSION = '1.6';
+  var VERSION = '1.7';
   // How many workflows can be "pinned" (shown as chips up top) at once.
   var MAX_ACTIVE = 4;
   // Material Symbols Rounded ligature names, grouped by theme so the picker browses well.
@@ -73,10 +73,45 @@
   function uid() { return 'x' + Math.random().toString(36).slice(2, 8); }
   function fixIcon(ic) { return EMOJI_MAP[ic] || (/^[a-z_0-9]+$/.test(ic || '') ? ic : 'flag'); }
 
+  // ---- per-flow auto-reset schedules (daily / weekly / off) ----
+  function parseDate(s) { var a = String(s || '').split('-'); return new Date(+a[0], (+a[1] || 1) - 1, +a[2] || 1); }
+  // The Monday-anchored week key for a date, so "weekly" resets once per week.
+  function weekKey(d) {
+    var day = d.getDay();                 // 0 Sun … 6 Sat
+    var m = new Date(d.getFullYear(), d.getMonth(), d.getDate() + (day === 0 ? -6 : 1 - day));
+    return m.getFullYear() + '-' + (m.getMonth() + 1) + '-' + m.getDate();
+  }
+  // A workflow's reset schedule (default daily, matching older behavior).
+  function resetSched(w) { return w.reset || 'daily'; }
+  function resetDue(w) {
+    var sched = resetSched(w), last = w.lastReset;
+    if (sched === 'off' || !last) return false;        // 'off', or no baseline yet → don't reset
+    if (sched === 'daily') return last !== today();
+    if (sched === 'weekly') return weekKey(parseDate(last)) !== weekKey(new Date());
+    return false;
+  }
+  // Reset any workflow whose schedule is due; anchor a baseline for any that
+  // lack one (migration from the old global reset). Returns true if anything
+  // changed. Runs on open and when the app regains focus/visibility.
+  function runAutoReset() {
+    var td = today(), touched = false;
+    state.workflows = state.workflows.map(function (w) {
+      var nw = w;
+      if (!nw.lastReset) { nw = Object.assign({}, nw, { lastReset: state.lastReset || td }); touched = true; }
+      if (resetDue(nw)) {
+        nw = Object.assign({}, nw, { lastReset: td, steps: nw.steps.map(function (p) { return Object.assign({}, p, { st: 0 }); }) });
+        touched = true;
+      }
+      return nw;
+    });
+    if (touched) { state.lastReset = td; persist(); }
+    return touched;
+  }
+
   function seed() {
     return {
       workflows: [
-        { id: 'w1', name: 'Daily Flow', active: true, steps: [
+        { id: 'w1', name: 'Daily Flow', active: true, reset: 'daily', lastReset: today(), steps: [
           { id: 's1', name: 'Leads', icon: 'ads_click', st: 0 },
           { id: 's2', name: 'Events', icon: 'calendar_month', st: 0 },
           { id: 's3', name: 'Cases', icon: 'gavel', st: 0 },
@@ -84,7 +119,7 @@
           { id: 's5', name: 'Marketing', icon: 'campaign', st: 0 },
           { id: 's6', name: 'Email', icon: 'mail', st: 0 }
         ]},
-        { id: 'w2', name: 'Wind-down', active: true, steps: [
+        { id: 'w2', name: 'Wind-down', active: true, reset: 'daily', lastReset: today(), steps: [
           { id: 's7', name: 'Log time', icon: 'schedule', st: 0 },
           { id: 's8', name: 'Tomorrow’s list', icon: 'edit_note', st: 0 }
         ]}
@@ -496,7 +531,7 @@
       onClick: function () {
         var id = uid();
         var full = activeCount() >= MAX_ACTIVE;
-        state.workflows = state.workflows.concat([{ id: id, name: 'New flow', active: !full, steps: [{ id: uid(), name: 'First step', icon: 'flag', st: 0 }] }]);
+        state.workflows = state.workflows.concat([{ id: id, name: 'New flow', active: !full, reset: 'daily', lastReset: today(), steps: [{ id: uid(), name: 'First step', icon: 'flag', st: 0 }] }]);
         // No room to pin it? Drop into the manage sheet so it can be seen/pinned.
         if (full) setState({ managing: true, capNote: true });
         else setState({ activeId: id, editing: true, pickerFor: null });
@@ -580,6 +615,24 @@
         }
         list.appendChild(el('div', { 'class': 'erow', style: 'background:' + (s.dragId === p.id ? '#f1ebdf' : '#fdfbf7') }, rowChildren));
       });
+      // Per-flow auto-reset schedule.
+      var curSched = resetSched(w);
+      var schedSeg = el('div', { 'class': 'scope' });
+      [['daily', 'Daily'], ['weekly', 'Weekly'], ['off', 'Off']].forEach(function (o) {
+        schedSeg.appendChild(el('button', {
+          'class': 'scope-opt' + (curSched === o[0] ? ' on' : ''), text: o[1],
+          onClick: (function (val) { return function () {
+            mutWf(function (x) { return Object.assign({}, x, { reset: val, lastReset: today() }); });
+          }; })(o[0])
+        }));
+      });
+      list.appendChild(el('div', { 'class': 'editsched' }, [
+        el('div', { 'class': 'editsched-label', text: 'Auto-reset this flow' }),
+        schedSeg,
+        el('div', { 'class': 'editsched-hint', text: curSched === 'daily' ? 'Clears to “to do” at the start of each day'
+          : curSched === 'weekly' ? 'Clears to “to do” at the start of each week (Monday)'
+          : 'Never clears automatically — reset it by hand' })
+      ]));
       if (s.workflows.length > 1) {
         list.appendChild(el('button', { 'class': 'delwf', text: '✕ DELETE THIS WORKFLOW',
           onClick: function () {
@@ -593,7 +646,7 @@
     var footer = el('div', { 'class': 'footer' });
     if (!s.editing) {
       footer.appendChild(el('button', { 'class': 'btn ghost', text: 'Reset',
-        onClick: function () { mutWf(function (x) { return Object.assign({}, x, { steps: x.steps.map(function (p) { return Object.assign({}, p, { st: 0 }); }) }); }); } }));
+        onClick: function () { mutWf(function (x) { return Object.assign({}, x, { lastReset: today(), steps: x.steps.map(function (p) { return Object.assign({}, p, { st: 0 }); }) }); }); } }));
       footer.appendChild(el('button', { 'class': 'btn solid grow', text: 'Edit flow',
         onClick: function () { setState({ editing: true, pickerFor: null }); } }));
     } else {
@@ -873,14 +926,12 @@
     if (idx >= 0 && chips[idx]) chips[idx].textContent = name;
   }
 
-  // Auto-reset on open if a new day (matches componentDidMount).
-  if (settings.autoReset && state.lastReset !== today()) {
-    state.lastReset = today();
-    state.workflows = state.workflows.map(function (w) {
-      return Object.assign({}, w, { steps: w.steps.map(function (p) { return Object.assign({}, p, { st: 0 }); }) });
-    });
-    persist();
-  }
+  // Apply each flow's own reset schedule on open…
+  runAutoReset();
+  // …and again whenever the app regains focus (so a long-open widget resets
+  // when you come back on a new day/week without needing a manual reload).
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && runAutoReset()) render(); });
+  window.addEventListener('focus', function () { if (runAutoReset()) render(); });
 
   render();
 
