@@ -6,7 +6,7 @@
   var KEY = 'flow-app-v2';
   // App version — bump this one line on each release (see CHANGELOG in README).
   // Shown next to the wordmark and at the bottom of the Settings sheet.
-  var VERSION = '1.7';
+  var VERSION = '1.8';
   // How many workflows can be "pinned" (shown as chips up top) at once.
   var MAX_ACTIVE = 4;
   // Material Symbols Rounded ligature names, grouped by theme so the picker browses well.
@@ -29,6 +29,8 @@
     'handyman','home_repair_service','construction','format_paint','grass','yard','potted_plant','local_florist','agriculture',
     // Sorting / organizing / piles
     'sort','swap_vert','filter_list','filter_alt','low_priority','category','stacks','layers','view_kanban','inventory_2','move_to_inbox','sort_by_alpha',
+    // Mail / letters
+    'drafts','markunread','local_post_office','contact_mail','outgoing_mail','mark_email_unread','attach_email','forward_to_inbox','send','approval',
     // Daily life
     'home','restaurant','local_dining','lunch_dining','coffee','local_cafe','shopping_cart','bed','bedtime','nightlight',
     'wb_sunny','pets','music_note','movie','flight','directions_car','water_drop','medication','favorite','star',

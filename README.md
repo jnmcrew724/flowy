@@ -52,6 +52,9 @@ Numbering is a simple running counter — each release just goes up one tenth: *
 
 ## Changelog
 
+### v1.8
+- Added a **Mail / letters** group to the step-icon picker (open-letter/drafts, sealed envelope, post office, contact mail, outgoing mail, send, and a stamp/seal) — alongside the existing `mail` envelope.
+
 ### v1.7
 - **Per-flow auto-reset schedule.** Each workflow can reset **Daily**, **Weekly** (Monday), or **Off** (manual only) — set it in Edit mode. Replaces the single global daily reset; each flow tracks its own last-reset date, and resets are re-checked when the app regains focus. Room to add more intervals later.
 - The version badge now shows even in the tiny widget size (next to the logo).
