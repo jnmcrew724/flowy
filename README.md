@@ -52,6 +52,9 @@ Numbering is a simple running counter — each release just goes up one tenth: *
 
 ## Changelog
 
+### v1.9
+- Added a **Robots / AI / automation** group to the step-icon picker: smart_toy (robot face), robot_2, precision_manufacturing (robotic arm), memory (chip), auto_awesome, auto_mode, settings_suggest.
+
 ### v1.8
 - Added a **Mail / letters** group to the step-icon picker (open-letter/drafts, sealed envelope, post office, contact mail, outgoing mail, send, and a stamp/seal) — alongside the existing `mail` envelope.
 
