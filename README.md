@@ -52,6 +52,9 @@ Numbering is a simple running counter — each release just goes up one tenth: *
 
 ## Changelog
 
+### v1.10
+- Added a **Priority / important** group to the step-icon picker: priority_high (exclamation), looks_one (number 1), label_important, bolt, stars.
+
 ### v1.9
 - Added a **Robots / AI / automation** group to the step-icon picker: smart_toy (robot face), robot_2, precision_manufacturing (robotic arm), memory (chip), auto_awesome, auto_mode, settings_suggest.
 
