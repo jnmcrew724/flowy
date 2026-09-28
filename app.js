@@ -6,7 +6,7 @@
   var KEY = 'flow-app-v2';
   // App version — bump this one line on each release (see CHANGELOG in README).
   // Shown next to the wordmark and at the bottom of the Settings sheet.
-  var VERSION = '1.9';
+  var VERSION = '1.10';
   // How many workflows can be "pinned" (shown as chips up top) at once.
   var MAX_ACTIVE = 4;
   // Material Symbols Rounded ligature names, grouped by theme so the picker browses well.
@@ -33,6 +33,8 @@
     'drafts','markunread','local_post_office','contact_mail','outgoing_mail','mark_email_unread','attach_email','forward_to_inbox','send','approval',
     // Robots / AI / automation
     'smart_toy','robot_2','precision_manufacturing','memory','auto_awesome','auto_mode','settings_suggest',
+    // Priority / important
+    'priority_high','looks_one','label_important','bolt','stars',
     // Daily life
     'home','restaurant','local_dining','lunch_dining','coffee','local_cafe','shopping_cart','bed','bedtime','nightlight',
     'wb_sunny','pets','music_note','movie','flight','directions_car','water_drop','medication','favorite','star',
